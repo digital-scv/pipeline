@@ -1,0 +1,23 @@
+def label = "jenkins-${UUID.randomUUID().toString()}"
+
+podTemplate(label:label, 
+    serviceAccount: 'jenkins-release',
+    containers: [
+        containerTemplate(name: 'maven', image: 'maven:3.5.2-jdk-8-alpine', ttyEnabled: true, command: 'cat'),
+        containerTemplate(name: 'docker', image: 'docker', ttyEnabled: true, command: 'cat'),
+        containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl', ttyEnabled: true, command: 'cat')
+    ]) {
+
+    node(label) {
+        def myRepo
+        stage('checkout') {
+            echo 'CHECKOUT'
+        }
+        
+        stage('build') {
+            container('maven') {
+                echo 'BUILD'
+            }
+        }
+    }
+}
