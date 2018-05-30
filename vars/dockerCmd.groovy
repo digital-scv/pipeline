@@ -28,7 +28,7 @@ private def setTag(command, config, logger) {
     return
   }
 
-  if (config.tag.getClass().isArray()) {
+  if ((config.tag instanceof List) || config.tag.getClass().isArray()) {
     config.tag.each { curr ->
       logger.debug("TAG : ${curr}")
       command.append(" -t ${curr}")
