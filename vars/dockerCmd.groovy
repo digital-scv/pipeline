@@ -8,16 +8,27 @@ def build(ret) {
   }
   
   def command = new StringBuffer()
-  command.append('docker buid')
+  command.append('docker build')
   
-  if (config.tag) {
-    logger.debug("TAG : ${config.tag}")
-    command.append(" -t ${config.tag}")
-  }
-
-  if (config.path) {
-    command.append(" ${config.path}")
-  }
+  appendCommand(config, 'file', 'f', command, logger)
+  appendCommand(config, 'tag', '-t', command, logger)
+  appendCommand(config, 'target', '--target', command, logger)
+  appendCommand(config, 'options', '', command, logger)
+  appendCommand(config, 'path', '', command, logger)
   
   sh command.toString()
 }
+
+@NonCPS
+private def appendCommand(config, configName, option, command, logger) {
+  def value = config.get(configName)
+  if (value) {
+    logger.debug("${configName.toUpperCase()} : ${value}")
+    if (option) {
+      command.append(" ${option} ${value}")
+    } else {
+      command.append(" ${value}")
+    }
+  }
+}
+ 
