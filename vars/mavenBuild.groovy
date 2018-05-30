@@ -103,12 +103,7 @@ private def setProfile(command, config, logger) {
   
   def profiles = new StringBuffer()
   if ((config.profile instanceof List) || config.profile.getClass().isArray()) {
-    config.profile.eachWithIndex { val, idx ->
-      if (idx > 0) {
-        profiles.append(",")
-      }
-      profiles.append(val)
-    }
+    profiles.append(config.profile.collect().join(","))
   } else {
     profiles.append(config.profile)
   }
@@ -121,12 +116,10 @@ private def setProfile(command, config, logger) {
 private def setSystemProperties(command, config, logger) {
   if (config.systemProperties) {
     if (config.systemProperties instanceof Map) {
-      def properties = config.systemProperties
-      def keySet = properties.keySet()
-      keySet.each { key ->
-        logger.debug("[SYSTEM PROPERTY] ${key} : ${properties.get(key)}")
-        command.append(" -D${key}=${properties.get(key)}")
-      }
+      command.append(config.systemProperties.collect { k, v ->
+        logger.debug("[SYSTEM PROPERTY] ${k} : ${v}")
+        return " -D${k}=${v}"
+      }.join())
     } else {
       logger.error("System Properties only support Map type parameter.")
       logger.error("example : ['key1':'value1','key2':'value2']")
