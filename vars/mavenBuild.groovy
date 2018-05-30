@@ -1,0 +1,144 @@
+import retort.utils.logging.Logger
+import static retort.utils.Utils.delegateParameters as getParam
+
+def call(ret) {
+  Logger logger = Logger.getLogger(this)
+  def config = [:]
+  config = getParam(ret)
+
+  def command = new StringBuffer()
+  
+  setJavaHome(command, config, logger)
+  setMavenCommand(command, config, logger)
+  setPom(command, config, logger)
+  setGoal(command, config, logger)
+  setProfile(command, config, logger)
+  setSystemProperties(command, config, logger)
+  setOptions(command, config, logger)
+  
+  executeMvn(command, config, logger)
+  
+}
+
+private def executeMvn(command, config, logger) {
+  def settingsCommand = new StringBuffer()
+  def configFiles = []
+  if (config.settingsID) {
+    logger.debug("Settings ID : ${config.settingsID}")
+    configFiles.add configFile(fileId: config.settingsID, variable: 'MAVEN_SETTINGS')
+  }
+  if (config.globalSettingsID) {
+    logger.debug("Global Settings ID : ${config.globalSettingsID}")
+    configFiles.add configFile(fileId: config.globalSettingsID, variable: 'MAVEN_GLOBAL_SETTINGS')
+  }
+  
+  if (configFiles.size() > 0) {
+    configFileProvider (configFiles) {
+      if (config.settingsID) {
+        command.append(" -s ${MAVEN_SETTINGS}")
+      }
+      if (config.globalSettingsID) {
+        command.append(" -gs ${MAVEN_GLOBAL_SETTINGS}")
+      }
+      
+      sh command.toString()
+    }
+  } else {
+    sh command.toString()
+  }
+}
+
+
+private def setJavaHome(command, config, logger) {
+  // set 
+  if (config.jdkTool) {
+    try {
+      def jdkHome = tool config.jdkTool
+      logger.debug("JAVA_HOME : ${jdkHome}")
+      command.append("export JAVA_HOME='${jdkHome}' && ")
+    } catch (Exception e) {
+      logger.error(e.getMessage())
+      throw e
+    }
+  }
+}
+
+private def setMavenCommand(command, config, logger) {
+  def mvnHome = ''
+  if (config.mavenTool) {
+    try {
+      mvnHome = tool config.mavenTool
+      logger.debug("MAVEN_HOME : ${mvnHome}")         
+      command.append("${mvnHome}/bin/mvn")
+    } catch (Exception e) {
+      logger.error(e.getMessage())
+      throw e
+    }
+  } else {
+    command.append("mvn")
+  }
+}
+
+@NonCPS
+private def setPom(command, config, logger) {
+  if (config.pom) {
+    logger.debug("POM : ${config.pom}")
+    command.append(" -f ${config.pom}")
+  }
+}
+
+@NonCPS
+private def setGoal(command, config, logger) {
+  if (config.goal) {
+    logger.debug("GOAL : ${config.goal}")
+    command.append(" ${config.goal}")
+  }
+}
+
+@NonCPS
+private def setProfile(command, config, logger) {
+  if (!config.profile) {
+    return
+  }
+  
+  def profiles = new StringBuffer()
+  if ((config.profile instanceof List) || config.profile.getClass().isArray()) {
+    config.profile.eachWithIndex { val, idx ->
+      if (idx > 0) {
+        profiles.append(",")
+      }
+      profiles.append(val)
+    }
+  } else {
+    profiles.append(config.profile)
+  }
+  
+  logger.debug("PROFILE : ${profiles.toString()}")
+  command.append(" -P${profiles.toString()}")
+}
+
+@NonCPS
+private def setSystemProperties(command, config, logger) {
+  if (config.systemProperties) {
+    if (config.systemProperties instanceof Map) {
+      def properties = config.systemProperties
+      def keySet = properties.keySet()
+      keySet.each { key ->
+        logger.debug("[SYSTEM PROPERTY] ${key} : ${properties.get(key)}")
+        command.append(" -D${key}=${properties.get(key)}")
+      }
+    } else {
+      logger.error("System Properties only support Map type parameter.")
+      logger.error("example : ['key1':'value1','key2':'value2']")
+      throw new Exception('System Properties only support Map type parameter.')
+    }
+  }
+}
+
+@NonCPS
+private def setOptions(command, config, logger) {
+  if (config.options) {
+    logger.debug("OPTIONS : ${config.options}")
+    command.append(" ${config.options}")
+  }
+}
