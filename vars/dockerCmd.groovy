@@ -2,7 +2,7 @@ import retort.utils.logging.Logger
 import static retort.utils.Utils.delegateParameters as getParam
 
 def build(ret) {
-  Logger logger = logger.getLogger(this)
+  Logger logger = Logger.getLogger(this)
   def config = getParam(ret) {
     path = '.'
   }
