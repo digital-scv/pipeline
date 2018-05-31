@@ -12,7 +12,6 @@ def build(ret) {
   
   appendCommand(config, 'file', '-f', command, logger)
   setTag(command, config, logger)
-  appendCommand(config, 'target', '--target', command, logger)
   appendCommand(config, 'options', '', command, logger)
   appendCommand(config, 'path', '', command, logger)
   
@@ -29,10 +28,10 @@ private def setTag(command, config, logger) {
   }
 
   if ((config.tag instanceof List) || config.tag.getClass().isArray()) {
-    config.tag.each { curr ->
-      logger.debug("TAG : ${curr}")
-      command.append(" -t ${curr}")
-    }
+    command.append config.tag.collect { t ->
+      logger.debug("TAG : ${t}")
+      return " -t ${t}"
+    }.join()
 
   } else if (config.tag instanceof CharSequence) {
     appendCommand(config, 'tag', '-t', command, logger)
