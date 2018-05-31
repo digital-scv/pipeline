@@ -12,7 +12,7 @@ def build(ret) {
   
   appendCommand(config, 'file', '-f', command, logger)
   setTag(command, config, logger)
-  setBuildArgs(command, config, map)
+  setBuildArgs(command, config, logger)
   appendCommand(config, 'options', '', command, logger)
   appendCommand(config, 'path', '', command, logger)
   
