@@ -7,8 +7,7 @@ def build(ret) {
     path = '.'
   }
   
-  def command = new StringBuffer()
-  command.append('docker build')
+  def command = new StringBuffer('docker build')
   
   appendCommand(config, 'file', '-f', command, logger)
   setTag(command, config, logger)
@@ -21,6 +20,24 @@ def build(ret) {
 
 def tag(ret) {
   Logger logger = Logger.getLogger(this)
+  def config = getParam(ret)
+  
+  def command = new StringBuffer('docker tag')
+  
+  if (!config.source) {
+    logger.error("source is required. source: 'SOURCE_IMAGE[:TAG]'")
+    throw new Exception("source is required. source: 'SOURCE_IMAGE[:TAG]'")
+  }
+  
+  if (!config.target) {
+    logger.error("target is required. target: 'TARGET_IMAGE[:TAG]'")
+    throw new Exception("target is required. target: 'TARGET_IMAGE[:TAG]'")
+  }
+  
+  command.append " ${config.source}"
+  command.append " ${config.target}"
+
+  sh command.toString()
 }
 
 private def setBuildArgs(command, config, logger) {
@@ -37,7 +54,7 @@ private def setBuildArgs(command, config, logger) {
       logger.error("buildArgs option only supports Map type parameter.")
       logger.error("example : ['key1':'value1','key2':'value2']")
       throw new Exception('buildArgs option only supports Map type parameter.')
-    }
+  }
 }
 
 
