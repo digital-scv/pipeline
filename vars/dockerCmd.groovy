@@ -30,8 +30,8 @@ private def setBuildArgs(command, config, logger) {
 
   if (config.buildArgs instanceof Map) {
     command.append(config.buildArgs.collect { k, v ->
-      logger.debug("[BUILD ARG] ${k} : ${v}")
-      return " -build-arg ${k}=${v}"
+      logger.debug("BUILD ARG : ${k} = ${v}")
+      return " --build-arg ${k}=${v}"
     }.join())
   } else {
       logger.error("buildArgs option only supports Map type parameter.")
