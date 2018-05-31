@@ -117,7 +117,7 @@ private def setSystemProperties(command, config, logger) {
   if (config.systemProperties) {
     if (config.systemProperties instanceof Map) {
       command.append(config.systemProperties.collect { k, v ->
-        logger.debug("SYSTEM PROPERTY ${k} : ${v}")
+        logger.debug("SYSTEM PROPERTY : ${k} = ${v}")
         return " -D${k}=${v}"
       }.join())
     } else {
