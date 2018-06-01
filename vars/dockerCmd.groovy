@@ -1,9 +1,34 @@
 import retort.utils.logging.Logger
 import static retort.utils.Utils.delegateParameters as getParam
 
+def push(ret) {
+  Logger logger = Logger.getLogger(this)
+  def config = getParam(ret)
+  
+  def command = new StringBuffer('docker push')
+  
+  command.append(getFullRepository(config, logger))
+  
+  // login with docker credential or username/password
+  // 1. credential
+  // 2. username/password
+  config.username
+  config.password
+  config.credentialId
+  if (config.credentialId) {
+    pushWithCredentialId(config, command, logger)
+  } else if (config.username && config.password) {
+    pushWithUsernameAndPassword(config, command, logger)                                    
+  }
+}
+
+ 
+
+
 def build(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret) {
+    // current workspace
     path = '.'
   }
   
@@ -18,6 +43,9 @@ def build(ret) {
   sh command.toString()
 }
 
+/**
+* docker tag
+*/
 def tag(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
@@ -26,12 +54,12 @@ def tag(ret) {
   
   if (!config.source) {
     logger.error("source is required. source: 'SOURCE_IMAGE[:TAG]'")
-    throw new Exception("source is required. source: 'SOURCE_IMAGE[:TAG]'")
+    throw new IllegalArgumentException("source is required. source: 'SOURCE_IMAGE[:TAG]'")
   }
   
   if (!config.target) {
     logger.error("target is required. target: 'TARGET_IMAGE[:TAG]'")
-    throw new Exception("target is required. target: 'TARGET_IMAGE[:TAG]'")
+    throw new IllegalArgumentException("target is required. target: 'TARGET_IMAGE[:TAG]'")
   }
   
   command.append " ${config.source}"
@@ -40,6 +68,60 @@ def tag(ret) {
   sh command.toString()
 }
 
+
+private def pushWithCredentialId(config, command, logger) {
+  withCredentials([usernamePassword(credentialsId: config.credentialId, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USER')]) {
+    sh """
+      docker login ${config.registry} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+      ${command}
+      docker logout
+    """
+  }
+}
+
+private def pushWithUsernameAndPassword(config, command, logger) {
+  wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: config.password, var: 'foo']]]) {
+    sh """
+      docker login ${config.registry} -u ${config.username} -p ${config.password}
+      ${command}
+      docker logout
+    """
+  }
+}
+
+@NonCPS
+private def getFullRepository(config, logger) {
+  //config.fullRepository
+  //config.registry
+  //config.imageName
+  //config.tag
+  
+  // if fullRepository is set, return fullRepository
+  // or return ${registry}/${imageName}:${tag}
+  if (config.fullRepository) {
+    return config.fullRepository
+  } else {
+    if (!config.imageName) {
+      logger.error("Must put fullRepository or imageName")
+      throw new IllegalArgumentException("Must put fullRepository or imageName")
+    }
+    
+    StringBuffer repository = new StringBuffer()
+    if (config.registry) {
+      repository.append("${config.registry}/")
+    }
+    
+    repository.append(config.imageName)
+    
+    if (config.tag) {
+      repository.append(":${config.tag}")
+    }
+
+    return repository.toString()
+  }
+}
+
+@NonCPS
 private def setBuildArgs(command, config, logger) {
   if (!config.buildArgs) {
     return
@@ -53,11 +135,11 @@ private def setBuildArgs(command, config, logger) {
   } else {
       logger.error("buildArgs option only supports Map type parameter.")
       logger.error("example : ['key1':'value1','key2':'value2']")
-      throw new Exception('buildArgs option only supports Map type parameter.')
+      throw new IllegalArgumentException('buildArgs option only supports Map type parameter.')
   }
 }
 
-
+@NonCPS
 private def setTag(command, config, logger) {
   if (!config.tag) {
     return
@@ -74,7 +156,6 @@ private def setTag(command, config, logger) {
   }
 
 }
-
 
 @NonCPS
 private def appendCommand(config, configName, option, command, logger) {
