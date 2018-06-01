@@ -12,9 +12,6 @@ def push(ret) {
   // login with docker credential or username/password
   // 1. credential
   // 2. username/password
-  config.username
-  config.password
-  config.credentialId
   if (config.credentialId) {
     pushWithCredentialId(config, command, logger)
   } else if (config.username && config.password) {
