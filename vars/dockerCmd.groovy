@@ -12,11 +12,15 @@ def push(ret) {
   // login with docker credential or username/password
   // 1. credential
   // 2. username/password
+  // 3. anonymous
   if (config.credentialId) {
     pushWithCredentialId(config, command, logger)
   } else if (config.username && config.password) {
     pushWithUsernameAndPassword(config, command, logger)                                    
+  } else {
+    sh command.toString()
   }
+
 }
 
  
