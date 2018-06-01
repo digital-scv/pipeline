@@ -5,7 +5,7 @@ def push(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
   
-  def command = new StringBuffer('docker push')
+  def command = new StringBuffer('docker push ')
   
   command.append(getFullRepository(config, logger))
   
