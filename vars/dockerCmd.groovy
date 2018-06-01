@@ -71,9 +71,18 @@ def tag(ret) {
 
 
 private def pushWithCredentialId(config, command, logger) {
+  def loginCommand
+  if (config.registry) {
+    logger.debug("Registry : ${config.registry}")
+    loginCommand = "docker login ${config.registry} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
+  } else {
+    logger.debug("Registry : docker.io")
+    loginCommand = "docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
+  }
+  logger.debug("Login with jenkins credential : ${config.credentialId}")
   withCredentials([usernamePassword(credentialsId: config.credentialId, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USER')]) {
     sh """
-      docker login ${config.registry} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+      ${loginCommand}
       ${command}
       docker logout
     """
