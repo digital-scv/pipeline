@@ -11,12 +11,13 @@ node {
         |${env._config}""".stripMargin()
     }
     
+    // Can not set any Object values at ${env} because ${env.class} is Map<String, String>
     def _config = yaml.load(env._config)
     
     //Check & Create slave containers
     //- https://github.com/jenkinsci/kubernetes-plugin
     //- https://stackoverflow.com/a/24189321
-    if(_config.agent?.containers){
+    if(_config.agent && _config.agent.containers){
         def label = "jenkins-${UUID.randomUUID().toString()}"
         def _agent = _config.agent
         def _containers = []
