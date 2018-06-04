@@ -1,6 +1,9 @@
 import retort.utils.logging.Logger
 import static retort.utils.Utils.delegateParameters as getParam
 
+/**
+* docker push
+*/
 def push(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
@@ -23,9 +26,10 @@ def push(ret) {
 
 }
 
- 
 
-
+/**
+* docker build
+*/
 def build(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret) {
@@ -111,34 +115,27 @@ private def pushWithUsernameAndPassword(config, command, logger) {
 
 @NonCPS
 private def getFullRepository(config, logger) {
-  //config.fullRepository
   //config.registry
   //config.imageName
   //config.tag
   
-  // if fullRepository is set, return fullRepository
-  // or return ${registry}/${imageName}:${tag}
-  if (config.fullRepository) {
-    return config.fullRepository
-  } else {
-    if (!config.imageName) {
-      logger.error("Must put fullRepository or imageName")
-      throw new IllegalArgumentException("Must put fullRepository or imageName")
-    }
-    
-    StringBuffer repository = new StringBuffer()
-    if (config.registry) {
-      repository.append("${config.registry}/")
-    }
-    
-    repository.append(config.imageName)
-    
-    if (config.tag) {
-      repository.append(":${config.tag}")
-    }
-
-    return repository.toString()
+  if (!config.imageName) {
+    logger.error("imageName is required.")
+    throw new IllegalArgumentException("imageName is required.")
   }
+  
+  StringBuffer repository = new StringBuffer()
+  if (config.registry) {
+    repository.append("${config.registry}/")
+  }
+  
+  repository.append(config.imageName)
+  
+  if (config.tag) {
+    repository.append(":${config.tag}")
+  }
+
+  return repository.toString()
 }
 
 @NonCPS
