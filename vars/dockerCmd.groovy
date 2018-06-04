@@ -117,7 +117,7 @@ private def pushWithUsernameAndPassword(config, command, logger) {
 private def getFullRepository(config, logger) {
   //config.registry
   //config.imageName
-  //config.tag
+  //config.imageVersion
   
   if (!config.imageName) {
     logger.error("imageName is required.")
@@ -131,8 +131,8 @@ private def getFullRepository(config, logger) {
   
   repository.append(config.imageName)
   
-  if (config.tag) {
-    repository.append(":${config.tag}")
+  if (config.imageVersion) {
+    repository.append(":${config.imageVersion}")
   }
 
   return repository.toString()
