@@ -1,5 +1,3 @@
-import static groovy.io.FileType.FILES
-
 def call(){
   //TODO: print as debug
   echo """\
@@ -16,6 +14,8 @@ def call(){
   //Load prepared Jenkinsfiles (load and run string)
   //- https://github.com/jenkinsci/workflow-cps-global-lib-plugin/blob/master/src/main/java/org/jenkinsci/plugins/workflow/libs/LibraryAdder.java#L194
   //- https://stackoverflow.com/a/43327284
+
+  //TODO: Throw error about invalid yaml
   def conf = yaml.load(env._config)
   def file = 'Jenkinsfile.' + (conf['type'] ?: 'default')
   def pipeline = libraryResource file

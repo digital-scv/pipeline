@@ -34,9 +34,6 @@ volumes:
 - hostPathVolume:
     hostPath: '/var/run/docker.sock'
     mountPath: '/var/run/docker.sock'
-- emptyDirVolume:
-    mountPath: '/root/.m2'
-    memoty: false
 """
 		)
     }
@@ -61,7 +58,6 @@ volumes:
 		_new.containers = config.containers.collect { script.containerTemplate(it) }
 		_new.volumes = config.volumes.collect {it.collect {script."${it.key}"(it.value)} }
 		_new.volumes = _new.volumes.flatten()  //Flatten Complex List (https://stackoverflow.com/a/11558564)
-		_new.label = 'aaaa'
 
 		logger.info("_new.containers   = ${_new.containers}")
 		logger.info("_new.volumes      = ${_new.volumes}")
@@ -107,13 +103,22 @@ volumes:
 	 * extend all possible field to current config
 	 */
 	public ContainerBuilder extend(Map ext){
+		if(!ext){
+			logger.info("Invalie Argument: ${ext}")
+			return
+		}
+
+		logger.info("Alias ${alias}")
 		ext.each {
-			if (alias[it.key])
-				alias[it.key](it.value)
+			def key = it.key
+			logger.info("Try to find alias with ${it}")
+			if (alias[key])
+				it.value.each { alias[key](it) }
 		}
 
 		return this;
 	}
+
 
 	/**
 	 * extend containerTemplate config
@@ -173,12 +178,12 @@ volumes:
 			comp.delegate = [ext:ext]
 			comp.resolveStrategy = Closure.DELEGATE_FIRST
 
-			logger.debug("ext    = ${ext}")
+			logger.info("ext    = ${ext}")
 			logger.debug("base   = ${base}")
 
 			//Find list item  := http://grails.asia/groovy-find
 			def found = base.find comp //{it.name == ext.name}
-			logger.debug("found  = ${found}")
+			logger.info("found  = ${found}")
 
         	//Merge two maps or append item to array  := http://mrhaki.blogspot.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
 			(found ?: base) << ext

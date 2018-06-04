@@ -7,8 +7,9 @@ def call(Map config, String script){
 	def builder = new ContainerBuilder(this)
 	echo "${builder}"
 
-	def label = 'aaaa'
-	def args  = builder.extend(config).build()
+	def args  = builder.extend(config.agent).build()
+	env.label = "modular-${UUID.randomUUID().toString()}"
+	args.label = env.label
 	echo "${args}"
 
 	podTemplate(args) {

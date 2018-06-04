@@ -1,6 +1,76 @@
-def label = 'aaaa'
 
-node(label) {
+
+node(env.label) {
+  checkout scm
+
+  def conf = yaml.load(env._config)
+  for(name in conf.stage) {
+    stage(name) {
+      //eachMap(conf[name], ret)
+      conf[name].each { it.each {
+        container(it.key) {
+          def body = modular.eval2(it.key, it.value)
+          body()
+        }
+      }}
+    }
+  }
+
+  /*
+  def eachMap(List<Map> list, def body){
+    list.each { it.each { body(it) } }
+  }
+  def conf = yaml.load(env._config)
+  for(name in conf.stage) {
+    stage(name) {
+      echo "Jeknisfile.container :: ${name}, ${conf[name]}"
+
+      // an exception which occurred:
+      //   in field com.cloudbees.groovy.cps.Outcome.normal
+      // Caused: java.io.NotSerializableException: org.codehaus.groovy.runtime.NullObject
+      //   at org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:860)
+      //*
+      ret = {
+        container(it.key) {
+          def body = modular.eval2(it.key, it.value)
+          body()
+        }
+      }
+      //*
+
+      //eachMap(conf[name], ret)
+      conf[name].each { it.each {
+        container(it.key) {
+          def body = modular.eval2(it.key, it.value)
+          body()
+        }
+      }}
+    }
+  }
+  */
+
+  /*
+  conf.stage.each {
+    def name = it
+
+    echo "Jeknisfile.container :: ${name}, ${conf[name]}"
+
+    stage(name) {
+      conf[name].each {
+        it.each {
+          container(it.key) {
+            //At blueocean, every log is on single step. (actually no step)
+            //modular.eval(it.key, it.value)
+            def body = modular.eval2(it.key, it.value)
+            body()
+          }
+        }
+      }
+    }
+  }
+  */
+
+/*
   stage('build') {
     container('maven') {
       sh 'mvn --version'
@@ -16,4 +86,5 @@ node(label) {
       sh 'df'
     }
   }
+*/
 }
