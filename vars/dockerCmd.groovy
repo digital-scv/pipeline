@@ -73,14 +73,14 @@ def tag(ret) {
 private def pushWithCredentialId(config, command, logger) {
   def loginCommand
   logger.debug("Login with jenkins credential : ${config.credentialId}")
+  if (config.registry) {
+    logger.debug("Registry : ${config.registry}")
+    loginCommand = "docker login ${config.registry} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
+  } else {
+    logger.debug("Registry : docker.io")
+    loginCommand = "docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
+  }
   withCredentials([usernamePassword(credentialsId: config.credentialId, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USER')]) {
-    if (config.registry) {
-      logger.debug("Registry : ${config.registry}")
-      loginCommand = "docker login ${config.registry} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
-    } else {
-      logger.debug("Registry : docker.io")
-      loginCommand = "docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
-    }
     sh """
       ${loginCommand}
       ${command}
@@ -90,9 +90,19 @@ private def pushWithCredentialId(config, command, logger) {
 }
 
 private def pushWithUsernameAndPassword(config, command, logger) {
+  def loginCommand
+  logger.debug("Login with username/password")
+  if (config.registry) {
+    logger.debug("Registry : ${config.registry}")
+    loginCommand = "docker login ${config.registry} -u ${config.username} -p ${config.password}"
+  } else {
+    logger.debug("Registry : docker.io")
+    loginCommand = "docker login -u ${config.username} -p ${config.password}"
+  }
+  
   wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: config.password, var: 'foo']]]) {
     sh """
-      docker login ${config.registry} -u ${config.username} -p ${config.password}
+      ${loginCommand}
       ${command}
       docker logout
     """
