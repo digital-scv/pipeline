@@ -1,0 +1,10 @@
+containers:
+- name: maven
+  image: maven:3.3.9-jdk-8-alpine
+  ttyEnabled: true
+  command: cat
+#volumes:
+#- persistentVolumeClaim:
+#    claimName: maven-repo-pvc
+#    mountPath: /root/.m2/repository
+#    readOnly: false

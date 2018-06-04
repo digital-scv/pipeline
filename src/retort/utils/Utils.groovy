@@ -38,4 +38,9 @@ class Utils {
     
     return config
   }
+
+  static def consistOf(def obj, def type){
+    //Reduce (http://mrhaki.blogspot.com/2009/09/groovy-goodness-using-inject-method.html)
+    obj in List && obj.inject(true){r,e -> r && e in type}  
+  }
 }

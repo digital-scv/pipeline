@@ -3,17 +3,28 @@
  */
 import retort.agent.k8s.ContainerBuilder
 
-def call(Map config, String script){
+def run(Map config, String script){
 	def builder = new ContainerBuilder(this)
+	builder.extend(config.agent)
+
+	run(builder, script)
+}
+
+def run(ContainerBuilder builder, String script){
 	echo "${builder}"
 
-	def label = 'aaaa'
-	def args  = builder.extend(config).build()
+	def args  = builder.build()
+	env.label = "modular-${UUID.randomUUID().toString()}"
+	args.label = env.label
 	echo "${args}"
 
 	podTemplate(args) {
 	  evaluate script
 	}
+}
+
+def builder(String yaml){
+	return new ContainerBuilder(this, yaml)
 }
 
 // For advenced pipeline user

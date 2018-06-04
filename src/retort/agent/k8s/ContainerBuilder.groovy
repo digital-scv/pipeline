@@ -5,6 +5,8 @@ import org.yaml.snakeyaml.Yaml as Parser
 import org.jenkinsci.plugins.workflow.cps.DSL
 import retort.utils.logging.Logger
 
+import static retort.utils.Utils.consistOf
+
 /*
  * Avoid "Caused: java.io.NotSerializableException"
  * - http://biouno.org/2016/11/11/what-happens-when-you-make-a-java-member-variable-transient-in-a-jenkins-plugin.html
@@ -19,38 +21,20 @@ public class ContainerBuilder implements Serializable {
 
     public ContainerBuilder(Script script){
 		//String _default = this.getClass().getResource('/retort/agent/k8s/config.yaml').text
-		this(script,
-"""
-containers:
-- name: maven
-  image: maven:3.3.9-jdk-8-alpine
-  ttyEnabled: true
-  command: cat
-- name: docker
-  image: docker
-  ttyEnabled: true
-  command: cat
-volumes:
-- hostPathVolume:
-    hostPath: '/var/run/docker.sock'
-    mountPath: '/var/run/docker.sock'
-- emptyDirVolume:
-    mountPath: '/root/.m2'
-    memoty: false
-"""
-		)
+		this(script, null)
     }
 
     public ContainerBuilder(Script script, String yaml){
         this.script = script
 		this.logger = Logger.getLogger(script);
 
-		this.config = parser.load(yaml)
+		this.config = yaml ? parser.load(yaml) : [containers:[], volumes:[]]
 
 		//Method pointer operator  := http://groovy-lang.org/operators.html#method-pointer-operator
 		this.alias = [
 			containers: this.&container,
-			volumes   : this.&volume
+			volumes   : this.&volume,
+			profile   : this.&load
 		]	
     }
 
@@ -61,7 +45,6 @@ volumes:
 		_new.containers = config.containers.collect { script.containerTemplate(it) }
 		_new.volumes = config.volumes.collect {it.collect {script."${it.key}"(it.value)} }
 		_new.volumes = _new.volumes.flatten()  //Flatten Complex List (https://stackoverflow.com/a/11558564)
-		_new.label = 'aaaa'
 
 		logger.info("_new.containers   = ${_new.containers}")
 		logger.info("_new.volumes      = ${_new.volumes}")
@@ -107,17 +90,48 @@ volumes:
 	 * extend all possible field to current config
 	 */
 	public ContainerBuilder extend(Map ext){
+		if(!ext){
+			logger.info("Invalie Argument: ${ext}")
+			return
+		}
+
+		logger.debug("Alias ${alias}")
 		ext.each {
-			if (alias[it.key])
-				alias[it.key](it.value)
+			logger.debug("Try to find alias with ${it}")
+
+			if (!alias[it.key])
+				throw new UnsupportedOperationException("Can not build podTemplate with field '${it.key}'. You can use ${alias.keySet()}")
+
+			alias[it.key](it.value)
 		}
 
 		return this;
 	}
 
+	/*
+	 * for loading container config yamls from classpath.
+	 */
+	public ContainerBuilder extend(List<String> files){
+		logger.info("extend :: Load prepared container config of ${files}")
+		load(files)
+		return this;
+	}
+
+	public ContainerBuilder load(List<String> files){
+		files.each {
+			logger.debug "$it = k8s/${it}.yaml"
+
+			def conf = script.libraryResource("k8s/${it}.yaml")
+			logger.debug "$conf"
+
+			extend(parser.load(conf))
+		}
+	}	
+
 	/**
 	 * extend containerTemplate config
 	 */
+	public ContainerBuilder container(List<Map> args){ container(args as Map[]) }
 	public ContainerBuilder container(Map... args){
 		logger.debug("config = ${config}")
 		merge(config.containers, args, {it.name == ext.name})
@@ -128,6 +142,7 @@ volumes:
 	/**
 	 * extend each volume types config
 	 */
+	public ContainerBuilder volume(List<Map> args){ volume(args as Map[]) }
 	public ContainerBuilder volume(Map... args){
 		logger.debug("config = ${config}")
 		merge(config.volumes, args, { compVolumeName(it, ext) })
@@ -158,7 +173,7 @@ volumes:
 			}
 		}
 
-		logger.info("${res} := key of ${v}")
+		logger.debug("${res} := key of ${v}")
 
 		//TODO: validation if res.length == 0
 		return res[0]
