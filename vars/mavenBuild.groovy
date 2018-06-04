@@ -123,7 +123,7 @@ private def setSystemProperties(command, config, logger) {
     } else {
       logger.error("System Properties only support Map type parameter.")
       logger.error("example : ['key1':'value1','key2':'value2']")
-      throw new Exception('System Properties only support Map type parameter.')
+      throw new IllegalArgumentException('System Properties only support Map type parameter.')
     }
   }
 }
