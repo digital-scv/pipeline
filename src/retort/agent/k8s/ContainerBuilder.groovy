@@ -18,7 +18,8 @@ public class ContainerBuilder implements Serializable {
 	transient Parser parser = new Parser()
 
     public ContainerBuilder(Script script){
-		String _default = //this.getClass().getResource('/retort/agent/k8s/config.yaml').text
+		//String _default = this.getClass().getResource('/retort/agent/k8s/config.yaml').text
+		this(script,
 """
 containers:
 - name: maven
@@ -37,12 +38,11 @@ volumes:
     mountPath: '/root/.m2'
     memoty: false
 """
-
-		this(script, _default)
+		)
     }
 
     public ContainerBuilder(Script script, String yaml){
-        	this.script = script
+        this.script = script
 		this.logger = Logger.getLogger(script);
 
 		this.config = parser.load(yaml)
