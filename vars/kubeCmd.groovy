@@ -13,15 +13,7 @@ def apply(ret) {
   logger.debug('apply executed')
 }
 
-/**
- * kubectl describe
- *
- * @param type resource type. ex) deploy, service etc.
- * @param name resource name or name prefix
- * @param file resource yaml file
- * @param namespace namespace
- * @param throwException : false throw Exception 
- */
+
 def describe(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
