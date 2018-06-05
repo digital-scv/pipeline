@@ -26,6 +26,8 @@ def describe(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
   
+  logger.debug('describe executed')
+  
   def command = new StringBuffer('kubectl describe')
   
   if (config.type && config.name) {
