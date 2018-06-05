@@ -26,14 +26,15 @@ def describe(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
   
-  logger.debug('describe executed')
-  
   def command = new StringBuffer('kubectl describe')
   
   if (config.type && config.name) {
+    logger.debug("RESOURCE TYPE : ${config.type}")
+    logger.debug("RESOURCE NAME : ${config.name}")
     command.append(" ${config.type}")
     command.append(" ${config.name}")
   } else if (config.file) {
+    logger.debug("RESOURCE FILE : ${config.file}")
     command.append(" -f ${config.file}")
   } else {
     logger.debug('type and name values are required. or specify file value.')
@@ -44,6 +45,7 @@ def describe(ret) {
   }
   
   if (config.namespace) {
+    logger.debug("NAMESPACE : ${config.namespace}")
     command.append(" -n ${config.namespace}")
   }
   
@@ -58,10 +60,3 @@ def describe(ret) {
 }
 
 
-def testMethod(ret) {
-  Logger logger = Logger.getLogger(this)
-  def config = getParam(ret)
-  
-  logger.debug('test executed')
-  
-}
