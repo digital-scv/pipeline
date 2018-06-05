@@ -2,8 +2,15 @@ import retort.utils.logging.Logger
 import static retort.utils.Utils.delegateParameters as getParam
 
 /**
-* docker push
-*/
+ * docker push
+ *
+ * @param registry
+ * @param imageName
+ * @param imageVersion
+ * @param credentialId
+ * @param username
+ * @param password
+ */
 def push(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
@@ -28,8 +35,14 @@ def push(ret) {
 
 
 /**
-* docker build
-*/
+ * docker build
+ *
+ * @param path
+ * @param file
+ * @param tag
+ * @param buildArgs
+ * @param options
+ */
 def build(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret) {
@@ -49,8 +62,11 @@ def build(ret) {
 }
 
 /**
-* docker tag
-*/
+ * docker tag
+ *
+ * @param source
+ * @param target
+ */
 def tag(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
