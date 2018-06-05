@@ -9,6 +9,8 @@ import static retort.utils.Utils.delegateParameters as getParam
 def apply(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
+  
+  logger.debug('apply executed')
 }
 
 /**
