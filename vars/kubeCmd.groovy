@@ -22,7 +22,7 @@ def apply(ret) {
  * @param namespace namespace
  * @param throwException : false throw Exception 
  */
-def describe(ret) {
+def descr(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
   
