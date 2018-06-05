@@ -5,7 +5,7 @@ import static retort.utils.Utils.delegateParameters as getParam
  * kubectl apply
  *
  * @param file resource file. YAML or json
- * @param namespace 
+ * @param namespace namespace
  * @param option apply option
  * @param wait Wait n seconds while this resource rolled out
  */
@@ -26,7 +26,12 @@ def apply(ret) {
     command.append(" ${config.option}")
   }
   
-  logger.debug('apply executed')
+  if (config.namespace) {
+    logger.debug("NAMESPACE : ${config.namespace}")
+    command.append(" -n ${config.namespace}")
+  }
+
+  executeApply(command, config, logger)
 }
 
 /**
@@ -145,7 +150,6 @@ def getValue(ret) {
   }
   
   try {
-    logger.debug command.toString()
     value = sh script: command.toString(), returnStdout: true
   } catch (Exception e) {
     if (config.throwException == true) {
@@ -162,12 +166,24 @@ def getValue(ret) {
  */
 private def executeApply(command, config, logger) {
   
-  if (config.wait) {
-    sh "kubectl "
-  } else {
+  if (config.wait instanceof Integer) {
     
-  }
+    sh command.toString()
+    
+    try {
+      def resource = getValue file: config.file, namespace: config.namespace, jsonpath: '{.kind}/{.metadata.name}'
+      timeout (time: config.wait, unit: 'SECONDS') {
+        sh "kubectl rollout status ${resource} -n ${config.namespace}"
+      }
 
+    } catch (Exception e) {
+
+    }
+
+
+  } else {
+    sh command.toString()
+  }
 
 }
 
