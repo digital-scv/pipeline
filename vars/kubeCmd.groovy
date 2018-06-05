@@ -145,6 +145,7 @@ def getValue(ret) {
   }
   
   try {
+    logger.debug command.toString()
     value = sh script: command.toString(), returnStdout: true
   } catch (Exception e) {
     if (config.throwException == true) {
