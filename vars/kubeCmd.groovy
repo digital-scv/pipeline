@@ -17,7 +17,8 @@ def apply(ret) {
  * @param type resource type. ex) deploy, service etc.
  * @param name resource name or name prefix
  * @param file resource yaml file
- * @param throwException : false
+ * @param namespace namespace
+ * @param throwException : false throw Exception 
  */
 def describe(ret) {
   Logger logger = Logger.getLogger(this)
@@ -36,6 +37,10 @@ def describe(ret) {
       throw new IllegalArgumentException('type and name values are required. or specify file value.');
     }
     return
+  }
+  
+  if (config.namespace) {
+    command.append(" -n ${config.namespace}")
   }
   
   try {
