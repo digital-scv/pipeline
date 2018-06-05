@@ -56,3 +56,12 @@ def descr(ret) {
   }
 
 }
+
+
+def testMethod(ret) {
+  Logger logger = Logger.getLogger(this)
+  def config = getParam(ret)
+  
+  logger.debug('test executed')
+  
+}
