@@ -4,12 +4,27 @@ import static retort.utils.Utils.delegateParameters as getParam
 /**
  * kubectl apply
  *
- * @param
+ * @param file
  */
 def apply(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
   
+  def command = new StringBuffer('kubectl apply')
+  if (config.file) {
+    logger.debug("FILE : ${config.file}")
+    command.append(" -f ${config.file}")
+  } else {
+    throw new IllegalArgumentException('file is required')      
+  }
+  
+  if (config.option) {
+    logger.debug("OPTION : ${config.option}")
+    command.append(" ${config.option}")
+  }
+
+  
+
   logger.debug('apply executed')
 }
 
@@ -28,16 +43,32 @@ def describe(ret) {
   
   def command = new StringBuffer('kubectl describe')
   
-  if (config.type && config.name) {
+  if (config.type) {
     logger.debug("RESOURCE TYPE : ${config.type}")
-    logger.debug("RESOURCE NAME : ${config.name}")
     command.append(" ${config.type}")
-    command.append(" ${config.name}")
+    
+    if (config.name) {
+      // kubectl describe type name
+      logger.debug("RESOURCE NAME : ${config.name}")
+      command.append(" ${config.name}")
+    } else if ((config.label instanceof List) || config.label.getClass().isArray()) {
+      // kubectl describe type -l [key=value]+
+      command.append(" -l ")
+      command.append config.label.collect{ l ->
+        logger.debug("LABEL-SELECTOR : ${l}")
+        return "${l}"
+      }.join(',')
+    } else {
+      if (config.throwException == true) {
+        logger.error('type value should be used with name or label.')
+        throw new IllegalArgumentException('type value should be used with name or label.')
+      }
+    }
   } else if (config.file) {
     logger.debug("RESOURCE FILE : ${config.file}")
     command.append(" -f ${config.file}")
   } else {
-    logger.debug('type and name values are required. or specify file value.')
+    logger.error('type and name values are required. or specify file value.')
     if (config.throwException == true) {
       throw new IllegalArgumentException('type and name values are required. or specify file value.')
     }
