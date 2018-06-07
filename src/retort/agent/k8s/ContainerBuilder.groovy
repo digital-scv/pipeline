@@ -20,7 +20,6 @@ public class ContainerBuilder implements Serializable {
 	transient Parser parser = new Parser()
 
     public ContainerBuilder(Script script){
-		//String _default = this.getClass().getResource('/retort/agent/k8s/config.yaml').text
 		this(script, null)
     }
 
@@ -188,12 +187,12 @@ public class ContainerBuilder implements Serializable {
 			comp.delegate = [ext:ext]
 			comp.resolveStrategy = Closure.DELEGATE_FIRST
 
-			logger.debug("ext    = ${ext}")
+			logger.info("ext    = ${ext}")
 			logger.debug("base   = ${base}")
 
 			//Find list item  := http://grails.asia/groovy-find
 			def found = base.find comp //{it.name == ext.name}
-			logger.debug("found  = ${found}")
+			logger.info("found  = ${found}")
 
         	//Merge two maps or append item to array  := http://mrhaki.blogspot.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
 			(found ?: base) << ext
