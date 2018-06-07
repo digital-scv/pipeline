@@ -2,10 +2,12 @@
  * Sandbox : https://github.com/jenkinsci/script-security-plugin/blob/master/src/main/resources/org/jenkinsci/plugins/scriptsecurity/sandbox/whitelists/blacklist
  */
 import retort.agent.k8s.ContainerBuilder
+import static groovy.json.JsonOutput.toJson
+import static groovy.json.JsonOutput.prettyPrint
 
 def run(Map config, String script){
 	def builder = new ContainerBuilder(this)
-	builder.extend(config.agent)
+	builder.extend(config.agent ?: config)
 
 	run(builder, script)
 }
@@ -16,7 +18,7 @@ def run(ContainerBuilder builder, String script){
 	def args  = builder.build()
 	env.label = "modular-${UUID.randomUUID().toString()}"
 	args.label = env.label
-	echo "${args}"
+	echo prettyPrint(toJson(args))
 
 	podTemplate(args) {
 	  evaluate script

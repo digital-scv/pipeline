@@ -45,8 +45,8 @@ public class ContainerBuilder implements Serializable {
 		_new.volumes = config.volumes.collect {it.collect {script."${it.key}"(it.value)} }
 		_new.volumes = _new.volumes.flatten()  //Flatten Complex List (https://stackoverflow.com/a/11558564)
 
-		logger.info("_new.containers   = ${_new.containers}")
-		logger.info("_new.volumes      = ${_new.volumes}")
+		logger.debug("_new.containers   = ${_new.containers}")
+		logger.debug("_new.volumes      = ${_new.volumes}")
 
 		return _new
 
@@ -187,12 +187,9 @@ public class ContainerBuilder implements Serializable {
 			comp.delegate = [ext:ext]
 			comp.resolveStrategy = Closure.DELEGATE_FIRST
 
-			logger.info("ext    = ${ext}")
-			logger.debug("base   = ${base}")
-
 			//Find list item  := http://grails.asia/groovy-find
 			def found = base.find comp //{it.name == ext.name}
-			logger.info("found  = ${found}")
+			logger.debug(["ext    = ${ext}", "base   = ${base}", "found  = ${found}"].join('\n'))
 
         	//Merge two maps or append item to array  := http://mrhaki.blogspot.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
 			(found ?: base) << ext

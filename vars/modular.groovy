@@ -18,15 +18,22 @@ def eval(String name, Object args){
 def eval2(String name, Object args){
 	if(args in String){
 	  // maven: mvn clean install -Dmaven.test.skip=true
+
 	  println "Run as single string shell. ${args}"
-	  return {sh args}
+	  
+	  def closure = {sh args}
+	  //closure.delegate = env.VARIABLES?: [:]
+	  return closure
 	} else if ( consistOf(args, String) ){
 	  // maven:
 	  // - mvn clean install
 	  // - -Dmaven.test.skip=true
 	  // - -Dmaven.xxx.yyy=zzz
-	  println "Run as multi line string shell. ${args}"
-	  return {sh args.join(' ')}
+
+	  //println "Run as multi line string shell. ${args}"
+	  def closure = { args.each {sh it} }
+	  //closure.delegate = env.VARIABLES?: [:]
+	  return closure
 	}
 
 	def func = eval(name)
@@ -37,7 +44,8 @@ def eval2(String name, Object args){
     // maven
 	//   goal: clean install
 	//   options: -Dmaven.test.skip=true
-	println "Run as mapped arguments. ${name}, ${func.class}, ${args}"
+
+	//println "Run as mapped arguments. ${name}, ${func.class}, ${args}"
 	return {func args}
 }
 

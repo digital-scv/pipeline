@@ -1,14 +1,24 @@
 /* Will executed in node */
+import java.nio.file.FileSystemNotFoundException
 import jenkins.scm.api.SCMFileSystem
+import retort.utils.logging.Logger
 
-def call(String name) {
+def call(String... paths) {
+  Logger log = Logger.getLogger(this)
+
   SCMFileSystem fs = SCMFileSystem.of(currentBuild.rawBuild.getParent(), scm)
-  println fs
-  if (fs != null) {
-    String script = fs.child(name).contentAsString();
-    println script
-    return script
-  } else {
-    //listener.getLogger().println("Lightweight checkout support not available, falling back to full checkout.");
+  log.debug('Loaded FileSystem :: $fs')
+  if (fs == null) {
+  	throw new FileSystemNotFoundException('Can not create SCMFileSystem with ${scm}')
+  }
+
+  for(path in paths){
+  	try{
+      String script = fs.child(path).contentAsString();
+      log.debug(script)
+      return script
+	} catch (Exception ex) {
+	  log.info("$ex")
+	}
   }
 }
