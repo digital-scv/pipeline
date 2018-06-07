@@ -6,6 +6,7 @@ import static retort.utils.Utils.delegateParameters as getParam
  *
  * @param file resource file. YAML or json
  * @param namespace namespace
+ * @param record Record current kubectl command in the resource annotation.
  * @param option apply option
  * @param wait Wait n seconds while this resource rolled out
  */
@@ -19,6 +20,11 @@ def apply(ret) {
     command.append(" -f ${config.file}")
   } else {
     throw new IllegalArgumentException('file is required')      
+  }
+  
+  if (config.record) {
+    logger.debug("RECORD : ${config.record}")
+    command.append(" --record=true")
   }
   
   if (config.option) {
@@ -169,17 +175,19 @@ private def executeApply(command, config, logger) {
   if (config.wait instanceof Integer) {
     
     sh command.toString()
+    def resource = getValue file: config.file, namespace: config.namespace, jsonpath: '{.kind}/{.metadata.name}'
+    
+    logger.debug("Waiting for ${config.wait} seconds, during ${resource} being applied.")
     
     try {
-      def resource = getValue file: config.file, namespace: config.namespace, jsonpath: '{.kind}/{.metadata.name}'
       timeout (time: config.wait, unit: 'SECONDS') {
         sh "kubectl rollout status ${resource} -n ${config.namespace}"
       }
 
     } catch (Exception e) {
-
+      logger.debug("Timeout occured, during ${resource} being applied.")
+      throw new IllegalStateException("Timeout occured, during ${resource} being applied.")
     }
-
 
   } else {
     sh command.toString()
