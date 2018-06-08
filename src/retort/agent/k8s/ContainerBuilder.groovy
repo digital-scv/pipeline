@@ -35,14 +35,16 @@ public class ContainerBuilder implements Serializable {
 			volumes   : this.&volume,
 			profile   : this.&load
 		]	
+
+		logger.debug("Alias ${alias}")
     }
 
 	public def build(def ret){
-		logger.info("config.default    = ${parser.dump(config)}")
+		logger.info("Build podTemplate with...\n${parser.dump(config)}")
 
-		def _new = [:]
-		_new.containers = config.containers.collect { script.containerTemplate(it) }
-		_new.volumes = config.volumes.collect {it.collect {script."${it.key}"(it.value)} }
+		def _new = config.clone()
+		_new.containers = _new.containers.collect { script.containerTemplate(it) }
+		_new.volumes = _new.volumes.collect {it.collect {script."${it.key}"(it.value)} }
 		_new.volumes = _new.volumes.flatten()  //Flatten Complex List (https://stackoverflow.com/a/11558564)
 
 		logger.debug("_new.containers   = ${_new.containers}")
@@ -94,13 +96,15 @@ public class ContainerBuilder implements Serializable {
 			return
 		}
 
-		logger.debug("Alias ${alias}")
+		logger.debug("Expend ContainerBuilder with...\n${parser.dump(ext).trim()}")
 		ext.each {
-			logger.debug("Try to find alias with ${it}")
+			if (!alias[it.key]){
+				config[it.key] = it.value
+				logger.debug("++ bind ${it.key} with a simple value ${it.value}")
+				return // other options
+			}
 
-			if (!alias[it.key])
-				throw new UnsupportedOperationException("Can not build podTemplate with field '${it.key}'. You can use ${alias.keySet()}")
-
+			logger.debug("++ call ${it.key} with ${it.value}")
 			alias[it.key](it.value)
 		}
 
@@ -111,18 +115,16 @@ public class ContainerBuilder implements Serializable {
 	 * for loading container config yamls from classpath.
 	 */
 	public ContainerBuilder extend(List<String> files){
-		logger.info("extend :: Load prepared container config of ${files}")
 		load(files)
 		return this;
 	}
 
 	public ContainerBuilder load(List<String> files){
+		logger.info("Load prepared container config of ${files}")
 		files.each {
-			logger.debug "$it = k8s/${it}.yaml"
+			logger.debug "Load 'k8s/${it}.yaml'"
 
 			def conf = script.libraryResource("k8s/${it}.yaml")
-			logger.debug "$conf"
-
 			extend(parser.load(conf))
 		}
 	}	
@@ -187,9 +189,12 @@ public class ContainerBuilder implements Serializable {
 			comp.delegate = [ext:ext]
 			comp.resolveStrategy = Closure.DELEGATE_FIRST
 
+			logger.debug("ext    = ${ext}")
+			logger.debug("base   = ${base}")
+
 			//Find list item  := http://grails.asia/groovy-find
 			def found = base.find comp //{it.name == ext.name}
-			logger.debug(["ext    = ${ext}", "base   = ${base}", "found  = ${found}"].join('\n'))
+			logger.debug("found  = ${found}")
 
         	//Merge two maps or append item to array  := http://mrhaki.blogspot.com/2010/04/groovy-goodness-adding-maps-to-map_21.html
 			(found ?: base) << ext

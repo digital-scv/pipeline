@@ -15,10 +15,11 @@ def call(String... paths) {
   for(path in paths){
   	try{
       String script = fs.child(path).contentAsString();
+      log.info("$path is loaded.")
       log.debug(script)
       return script
-	} catch (Exception ex) {
-	  log.info("$ex")
-	}
+  	} catch (Exception ex) {
+  	  log.info("$ex")
+  	}
   }
 }

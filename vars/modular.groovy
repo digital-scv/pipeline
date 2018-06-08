@@ -18,22 +18,13 @@ def eval(String name, Object args){
 def eval2(String name, Object args){
 	if(args in String){
 	  // maven: mvn clean install -Dmaven.test.skip=true
-
-	  println "Run as single string shell. ${args}"
-	  
-	  def closure = {sh args}
-	  //closure.delegate = env.VARIABLES?: [:]
-	  return closure
+	  return {sh args}
 	} else if ( consistOf(args, String) ){
 	  // maven:
 	  // - mvn clean install
 	  // - -Dmaven.test.skip=true
 	  // - -Dmaven.xxx.yyy=zzz
-
-	  //println "Run as multi line string shell. ${args}"
-	  def closure = { args.each {sh it} }
-	  //closure.delegate = env.VARIABLES?: [:]
-	  return closure
+	  return { args.each {sh it} }
 	}
 
 	def func = eval(name)
@@ -44,12 +35,10 @@ def eval2(String name, Object args){
     // maven
 	//   goal: clean install
 	//   options: -Dmaven.test.skip=true
-
-	//println "Run as mapped arguments. ${name}, ${func.class}, ${args}"
 	return {func args}
 }
 
 private def consistOf(def obj, def type){
 	//Reduce (http://mrhaki.blogspot.com/2009/09/groovy-goodness-using-inject-method.html)
-	obj in List && obj.inject(true){r,e -> r && e in type}	
+	obj in List && obj.inject(true){r,e -> r && e in type}
 }

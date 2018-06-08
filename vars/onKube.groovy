@@ -3,7 +3,6 @@
  */
 import retort.agent.k8s.ContainerBuilder
 import static groovy.json.JsonOutput.toJson
-import static groovy.json.JsonOutput.prettyPrint
 
 def run(Map config, String script){
 	def builder = new ContainerBuilder(this)
@@ -13,14 +12,15 @@ def run(Map config, String script){
 }
 
 def run(ContainerBuilder builder, String script){
-	echo "${builder}"
-
 	def args  = builder.build()
 	env.label = "modular-${UUID.randomUUID().toString()}"
 	args.label = env.label
-	echo prettyPrint(toJson(args))
+	echo "$args"
 
 	podTemplate(args) {
+	  //Load prepared Jenkinsfiles (load and run string)
+      //- https://github.com/jenkinsci/workflow-cps-global-lib-plugin/blob/master/src/main/java/org/jenkinsci/plugins/workflow/libs/LibraryAdder.java#L194
+      //- https://stackoverflow.com/a/43327284
 	  evaluate script
 	}
 }
