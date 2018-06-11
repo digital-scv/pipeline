@@ -1,4 +1,5 @@
 import retort.utils.logging.Logger
+import retort.exception.RetortException
 import static retort.utils.Utils.delegateParameters as getParam
 
 /**
@@ -16,6 +17,7 @@ import static retort.utils.Utils.delegateParameters as getParam
  */
 def call(ret) {
   Logger logger = Logger.getLogger(this)
+  createException.init(logger)
   def config = [:]
   config = getParam(ret)
 
@@ -126,6 +128,7 @@ private def setProfile(command, config, logger) {
   command.append(" -P${profiles.toString()}")
 }
 
+@NonCPS
 private def setSystemProperties(command, config, logger) {
   if (config.systemProperties) {
     if (config.systemProperties instanceof Map) {
@@ -137,7 +140,7 @@ private def setSystemProperties(command, config, logger) {
       logger.error("System Properties only support Map type parameter.")
       logger.error("example : ['key1':'value1','key2':'value2']")
       
-      throw createException('RC103')
+      throw new RetortException('RC103')
     }
   }
 }

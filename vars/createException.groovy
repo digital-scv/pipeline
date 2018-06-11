@@ -28,7 +28,7 @@ def call(errorCode, Throwable throwable, String... args) {
 }
 
 
-private init(logger) {
+def init(logger) {
   if (MessageUtil.isInitialized()) {
     return
   }
