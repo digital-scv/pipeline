@@ -26,7 +26,13 @@ def call(ret) {
   setPom(command, config, logger)
   setGoal(command, config, logger)
   setProfile(command, config, logger)
-  setSystemProperties(command, config, logger)
+  try {
+    setSystemProperties(command, config, logger)
+  } catch (Exception e) {
+    logger.error('!!!!!!!!!!!!!!!!!!!!!!!')
+  }
+
+
   setOptions(command, config, logger)
   
   executeMvn(command, config, logger)
