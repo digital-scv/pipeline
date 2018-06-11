@@ -4,9 +4,10 @@ import static retort.utils.Utils.delegateParameters as getParam
 /**
  * kubectl apply
  *
- * @param file resource file. YAML or json
+ * @param file required. resource file. YAML or json
  * @param namespace namespace
  * @param record Record current kubectl command in the resource annotation.
+ * @param recoverOnFail Delete resource when fail applying.
  * @param option apply option
  * @param wait Wait n seconds while this resource rolled out
  */
@@ -19,7 +20,7 @@ def apply(ret) {
     logger.debug("FILE : ${config.file}")
     command.append(" -f ${config.file}")
   } else {
-    throw new IllegalArgumentException('file is required')      
+    throw createException('RC301')   
   }
   
   if (config.record) {
@@ -74,7 +75,7 @@ def describe(ret) {
     } else {
       if (config.throwException == true) {
         logger.error('type value should be used with name or label.')
-        throw new IllegalArgumentException('type value should be used with name or label.')
+        throw createException('RC302')
       }
     }
   } else if (config.file) {
@@ -83,7 +84,7 @@ def describe(ret) {
   } else {
     logger.error('type and name values are required. or specify file value.')
     if (config.throwException == true) {
-      throw new IllegalArgumentException('type and name values are required. or specify file value.')
+      throw createException('RC303')
     }
     return
   }
@@ -134,7 +135,7 @@ def getValue(ret) {
   } else {
     logger.error('type and name values are required. or specify file value.')
     if (config.throwException == true) {
-      throw new IllegalArgumentException('type and name values are required. or specify file value.')
+      throw createException('RC303')
     }
     return value
   }
@@ -150,7 +151,7 @@ def getValue(ret) {
   } else {
     logger.error('jsonpath value is required.')
     if (config.throwException == true) {
-      throw new IllegalArgumentException('jsonpath value is required.')
+      throw createException('RC304')
     }
     return value
   }
@@ -158,8 +159,9 @@ def getValue(ret) {
   try {
     value = sh script: command.toString(), returnStdout: true
   } catch (Exception e) {
+    logger.error("Exception occured while getting jsonpath : ${config.jsonpath}")
     if (config.throwException == true) {
-      throw e
+      throw createException('RC305', e, config.jsonpath)
     }
   }
   
@@ -172,25 +174,40 @@ def getValue(ret) {
  */
 private def executeApply(command, config, logger) {
   
-  if (config.wait instanceof Integer) {
-    
-    sh command.toString()
-    def resource = getValue file: config.file, namespace: config.namespace, jsonpath: '{.kind}/{.metadata.name}'
-    
-    logger.debug("Waiting for ${config.wait} seconds, during ${resource} being applied.")
-    
-    try {
-      timeout (time: config.wait, unit: 'SECONDS') {
-        sh "kubectl rollout status ${resource} -n ${config.namespace}"
+
+  try {
+      
+    if (config.wait instanceof Integer) {
+      
+      // AbortException, no recover
+      sh command.toString()
+      
+      // AbortException, IllegalArgumentException
+      def resource = getValue file: config.file, namespace: config.namespace, jsonpath: '{.kind}/{.metadata.name}'
+      def resourceType = resource.lastIndexOf('/').with { resource.substring(0, it) }
+      def resourceName = resource.lastIndexOf('/').with { resource.substring(it + 1) }
+      
+      logger.debug("Waiting for ${config.wait} seconds, during ${resource} being applied.")
+      
+      try {
+        // AbortException
+        timeout (time: config.wait, unit: 'SECONDS') {
+          sh "kubectl rollout status ${resource} -n ${config.namespace}"
+        }
+  
+      } catch (Exception e) {
+        logger.debug("Timeout occured, during ${resource} being applied. Check events.")
+        
+        describe file: config.file, namespace: config.namespace
+        
+        throw new IllegalStateException("Timeout occured, during ${resource} being applied.")
       }
-
-    } catch (Exception e) {
-      logger.debug("Timeout occured, during ${resource} being applied.")
-      throw new IllegalStateException("Timeout occured, during ${resource} being applied.")
+  
+    } else {
+      sh command.toString()
     }
-
-  } else {
-    sh command.toString()
+  } catch (Exception e) {
+    
   }
 
 }

@@ -75,12 +75,12 @@ def tag(ret) {
   
   if (!config.source) {
     logger.error("source is required. source: 'SOURCE_IMAGE[:TAG]'")
-    throw new IllegalArgumentException("source is required. source: 'SOURCE_IMAGE[:TAG]'")
+    throw createException('RC201')
   }
   
   if (!config.target) {
     logger.error("target is required. target: 'TARGET_IMAGE[:TAG]'")
-    throw new IllegalArgumentException("target is required. target: 'TARGET_IMAGE[:TAG]'")
+    throw createException('RC202')
   }
   
   command.append " ${config.source}"
@@ -138,7 +138,7 @@ private def getFullRepository(config, logger) {
   
   if (!config.imageName) {
     logger.error("imageName is required.")
-    throw new IllegalArgumentException("imageName is required.")
+    throw createException('RC203')
   }
   
   StringBuffer repository = new StringBuffer()
@@ -169,7 +169,7 @@ private def setBuildArgs(command, config, logger) {
   } else {
       logger.error("buildArgs option only supports Map type parameter.")
       logger.error("example : ['key1':'value1','key2':'value2']")
-      throw new IllegalArgumentException('buildArgs option only supports Map type parameter.')
+      throw createException('RC204')
   }
 }
 

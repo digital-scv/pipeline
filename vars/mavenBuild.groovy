@@ -71,7 +71,7 @@ private def setJavaHome(command, config, logger) {
       command.append("export JAVA_HOME='${jdkHome}' && ")
     } catch (Exception e) {
       logger.error(e.getMessage())
-      throw e
+      throw createException('RC101', e, config.jdkTool)
     }
   }
 }
@@ -85,7 +85,7 @@ private def setMavenCommand(command, config, logger) {
       command.append("${mvnHome}/bin/mvn")
     } catch (Exception e) {
       logger.error(e.getMessage())
-      throw e
+      throw createException('RC102', e, config.mavenTool)
     }
   } else {
     command.append("mvn")
@@ -136,7 +136,7 @@ private def setSystemProperties(command, config, logger) {
     } else {
       logger.error("System Properties only support Map type parameter.")
       logger.error("example : ['key1':'value1','key2':'value2']")
-      throw new IllegalArgumentException('System Properties only support Map type parameter.')
+      throw createException('RC103')
     }
   }
 }
