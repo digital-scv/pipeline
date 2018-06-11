@@ -126,7 +126,6 @@ private def setProfile(command, config, logger) {
   command.append(" -P${profiles.toString()}")
 }
 
-@NonCPS
 private def setSystemProperties(command, config, logger) {
   if (config.systemProperties) {
     if (config.systemProperties instanceof Map) {
@@ -138,10 +137,7 @@ private def setSystemProperties(command, config, logger) {
       logger.error("System Properties only support Map type parameter.")
       logger.error("example : ['key1':'value1','key2':'value2']")
       
-      def e = createException('RC103')
-      logger.error(e.getMessage())
-      throw e
-      //throw new IllegalArgumentException('RC103')
+      throw createException('RC103')
     }
   }
 }
