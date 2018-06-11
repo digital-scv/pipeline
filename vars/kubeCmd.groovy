@@ -1,4 +1,5 @@
 import retort.utils.logging.Logger
+import retort.exception.RetortException
 import static retort.utils.Utils.delegateParameters as getParam
 
 /**
@@ -6,14 +7,13 @@ import static retort.utils.Utils.delegateParameters as getParam
  *
  * @param file required. resource file. YAML or json
  * @param namespace namespace
- * @param record Record current kubectl command in the resource annotation.
  * @param recoverOnFail Delete resource when fail applying.
  * @param option apply option
- * @param wait Wait n seconds while this resource rolled out
+ * @param wait : 300 . Wait n seconds while this resource rolled out
  */
 def apply(ret) {
   Logger logger = Logger.getLogger(this)
-  def config = getParam(ret)
+  def config = getParam(ret, [wait: 300])
   
   def command = new StringBuffer('kubectl apply')
   if (config.file) {
@@ -21,11 +21,6 @@ def apply(ret) {
     command.append(" -f ${config.file}")
   } else {
     throw createException('RC301')   
-  }
-  
-  if (config.record) {
-    logger.debug("RECORD : ${config.record}")
-    command.append(" --record=true")
   }
   
   if (config.option) {
@@ -37,6 +32,8 @@ def apply(ret) {
     logger.debug("NAMESPACE : ${config.namespace}")
     command.append(" -n ${config.namespace}")
   }
+  
+  command.append(" --record=true")
 
   executeApply(command, config, logger)
 }
@@ -53,7 +50,7 @@ def apply(ret) {
  */
 def describe(ret) {
   Logger logger = Logger.getLogger(this)
-  def config = getParam(ret)
+  def config = getParam(ret, [throwException: false])
   
   def command = new StringBuffer('kubectl describe')
   
@@ -74,7 +71,7 @@ def describe(ret) {
       }.join(',')
     } else {
       if (config.throwException == true) {
-        logger.error('type value should be used with name or label.')
+        logger.error('describe : type value should be used with name or label.')
         throw createException('RC302')
       }
     }
@@ -82,7 +79,7 @@ def describe(ret) {
     logger.debug("RESOURCE FILE : ${config.file}")
     command.append(" -f ${config.file}")
   } else {
-    logger.error('type and name values are required. or specify file value.')
+    logger.error('describe : type and name values are required. or specify file value.')
     if (config.throwException == true) {
       throw createException('RC303')
     }
@@ -97,11 +94,80 @@ def describe(ret) {
   try {
     sh command.toString()
   } catch (Exception e) {
+    logger.error('Exception occured while running describe command : ${command.toString()}')
     if (config.throwException == true) {
-      throw e
+      throw createException('RC306', e, command.toString())
     }
   }
 
+}
+
+/**
+ * Check resource exists.
+ *
+ * @param type resource type. ex) deploy, service etc.
+ * @param name resource name or name prefix
+ * @param label label selector array
+ * @param file resource yaml file
+ * @param namespace namespace
+ * @param throwException : false throw Exception
+ * @return boolean resource exists or not. if error occured and throwException : false return false.
+ */
+def resourceExists(ret) {
+  Logger logger = Logger.getLogger(this)
+  def config = getParam(ret, [throwException: false])
+  
+  def command = new StringBuffer('kubectl get')
+  def result = false
+  if (config.type) {
+    logger.debug("RESOURCE TYPE : ${config.type}")
+    command.append(" ${config.type}")
+    
+    if (config.name) {
+      // kubectl describe type name
+      logger.debug("RESOURCE NAME : ${config.name}")
+      command.append(" ${config.name}")
+    } else if ((config.label instanceof List) || config.label.getClass().isArray()) {
+      // kubectl describe type -l [key=value]+
+      command.append(" -l ")
+      command.append config.label.collect{ l ->
+        logger.debug("LABEL-SELECTOR : ${l}")
+        return "${l}"
+      }.join(',')
+    } else {
+      if (config.throwException == true) {
+        logger.error('resourceExists : type value should be used with name or label.')
+        throw createException('RC302')
+      }
+      return result
+    }
+  } else if (config.file) {
+    logger.debug("RESOURCE FILE : ${config.file}")
+    command.append(" -f ${config.file}")
+  } else {
+    logger.error('resourceExists : type and name values are required. or specify file value.')
+    if (config.throwException == true) {
+      throw createException('RC303')
+    }
+    return result
+  }
+  
+  if (config.namespace) {
+    logger.debug("NAMESPACE : ${config.namespace}")
+    command.append(" -n ${config.namespace}")
+  }
+  
+  try {
+    def lines = sh script: "${command.toString()} | wc -l", returnStdout: true
+    result = lines.toInteger() > 0 ? true : false
+  } catch (Exception e) {
+    if (config.throwException == true) {
+      logger.error('Exception occured while checking resource is exist : ${command.toString()}')
+      throw createException('RC309', e, command.toString())
+    }
+  }
+  
+  return result
 }
 
 /**
@@ -117,7 +183,7 @@ def describe(ret) {
  */
 def getValue(ret) {
   Logger logger = Logger.getLogger(this)
-  def config = getParam(ret)
+  def config = getParam(ret, [throwException: false])
   
   def value = ''
   def command = new StringBuffer('kubectl get')
@@ -133,7 +199,7 @@ def getValue(ret) {
     logger.debug("RESOURCE FILE : ${config.file}")
     command.append(" -f ${config.file}")
   } else {
-    logger.error('type and name values are required. or specify file value.')
+    logger.error('getValue : type and name values are required. or specify file value.')
     if (config.throwException == true) {
       throw createException('RC303')
     }
@@ -168,47 +234,125 @@ def getValue(ret) {
   return value
 }
 
+/**
+ * kubectl rollout status
+ *
+ * @param file
+ * @param type
+ * @param name
+ * @param namespace
+ * @param wait : 300
+ * @param throwException : false throw Exception 
+ */
+def rolloutStatus(ret) {
+  Logger logger = Logger.getLogger(this)
+  def config = getParam(ret, [wait: 300])
+  
+  def value = ''
+  def command = new StringBuffer('kubectl rollout status')
+  
+  if (config.type && config.name) {
+    logger.debug("RESOURCE TYPE : ${config.type}")
+    command.append(" ${config.type}")
+    
+    // kubectl get type name
+    logger.debug("RESOURCE NAME : ${config.name}")
+    command.append(" ${config.name}")
+  } else if (config.file) {
+    logger.debug("RESOURCE FILE : ${config.file}")
+    command.append(" -f ${config.file}")
+  } else {
+    logger.error('rolloutStatus : type and name values are required. or specify file value.')
+    if (config.throwException == true) {
+      throw createException('RC303')
+    }
+  }
+  
+  if (config.namespace) {
+    logger.debug("NAMESPACE : ${config.namespace}")
+    command.append(" -n ${config.namespace}")
+  }
+  
+  def config2 = config.clone()
+  config2.put('jsonpath', '{.kind}/{.metadata.name}')
+  def resource
+  try {
+    resource = getValue config2
+  } catch (Exception e2) {
+    if (config.type && config.name) {
+      resource = "${config.type}/${config.name}"
+    } else {
+      resource = config.file
+    }
+  }
+  
+  try {
+    logger.debug("Waiting for ${config.wait} seconds, during ${resource} being applied.")
+    timeout (time: config.wait, unit: 'SECONDS') {
+      try {
+        sh command.toString()
+      } catch (Exception e) {
+        logger.error("Exception occured while running rollout status : ${config.jsonpath}")
+        if (config.throwException == true) {
+          throw createException('RC307', e, config.jsonpath)
+        }
+      }
+    }
+  } catch (Exception e) {
+    if (e instanceof RetortException && e.getErrorCode == 'RC307') {
+      throw e
+    }
+
+    logger.debug("Timeout occured while ${resource} being applied. Check events.")
+    
+    config2.put('throwException', false)
+    describe config2
+    
+    throw createException('RC308', e, resource)
+  }
+  
+}
+
+
 
 /**
  * excute apply command.
  */
 private def executeApply(command, config, logger) {
   
-
+  def exists = false
   try {
-      
-    if (config.wait instanceof Integer) {
-      
-      // AbortException, no recover
-      sh command.toString()
-      
-      // AbortException, IllegalArgumentException
-      def resource = getValue file: config.file, namespace: config.namespace, jsonpath: '{.kind}/{.metadata.name}'
-      def resourceType = resource.lastIndexOf('/').with { resource.substring(0, it) }
-      def resourceName = resource.lastIndexOf('/').with { resource.substring(it + 1) }
-      
-      logger.debug("Waiting for ${config.wait} seconds, during ${resource} being applied.")
-      
-      try {
-        // AbortException
-        timeout (time: config.wait, unit: 'SECONDS') {
-          sh "kubectl rollout status ${resource} -n ${config.namespace}"
-        }
-  
-      } catch (Exception e) {
-        logger.debug("Timeout occured, during ${resource} being applied. Check events.")
-        
-        describe file: config.file, namespace: config.namespace
-        
-        throw new IllegalStateException("Timeout occured, during ${resource} being applied.")
-      }
-  
-    } else {
-      sh command.toString()
-    }
-  } catch (Exception e) {
+    exists = resourceExists config
     
+    // no need to recover
+    sh command.toString()
+
+    // recover
+    if (config.wait instanceof Integer && config.wait > 0) {
+      rolloutStatus config
+    }
+    
+  } catch (Exception e) {
+    logger.error()
+    if (config.recoverOnFail && e instanceof RetortException) {
+      recoverApply(exists, config, logger)
+    }
+    throw createException('RC310', e, config.file)
   }
 
 }
+
+/**
+ * 
+ */
+private def recoverApply(exists, config, logger) {
+  if (exists) {
+     // rollback
+  } else {
+    // delete        
+  }
+
+
+}
+
 

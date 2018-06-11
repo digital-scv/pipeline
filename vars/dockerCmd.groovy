@@ -1,4 +1,5 @@
 import retort.utils.logging.Logger
+import retort.exception.RetortException
 import static retort.utils.Utils.delegateParameters as getParam
 
 /**
@@ -13,6 +14,8 @@ import static retort.utils.Utils.delegateParameters as getParam
  */
 def push(ret) {
   Logger logger = Logger.getLogger(this)
+  createException.init(logger)
+  
   def config = getParam(ret)
   
   def command = new StringBuffer('docker push ')
@@ -45,6 +48,7 @@ def push(ret) {
  */
 def build(ret) {
   Logger logger = Logger.getLogger(this)
+  createException.init(logger)
   def config = getParam(ret) {
     // current workspace
     path = '.'
@@ -69,6 +73,7 @@ def build(ret) {
  */
 def tag(ret) {
   Logger logger = Logger.getLogger(this)
+  createException.init(logger)
   def config = getParam(ret)
   
   def command = new StringBuffer('docker tag')
@@ -138,7 +143,7 @@ private def getFullRepository(config, logger) {
   
   if (!config.imageName) {
     logger.error("imageName is required.")
-    throw createException('RC203')
+    throw new RetortException('RC203')
   }
   
   StringBuffer repository = new StringBuffer()
@@ -169,7 +174,7 @@ private def setBuildArgs(command, config, logger) {
   } else {
       logger.error("buildArgs option only supports Map type parameter.")
       logger.error("example : ['key1':'value1','key2':'value2']")
-      throw createException('RC204')
+      throw new RetortException('RC204')
   }
 }
 
