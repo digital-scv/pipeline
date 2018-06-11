@@ -26,12 +26,7 @@ def call(ret) {
   setPom(command, config, logger)
   setGoal(command, config, logger)
   setProfile(command, config, logger)
-  try {
-    setSystemProperties(command, config, logger)
-  } catch (Exception e) {
-    logger.error('!!!!!!!!!!!!!!!!!!!!!!!')
-  }
-
+  setSystemProperties(command, config, logger)
 
   setOptions(command, config, logger)
   
@@ -142,8 +137,8 @@ private def setSystemProperties(command, config, logger) {
     } else {
       logger.error("System Properties only support Map type parameter.")
       logger.error("example : ['key1':'value1','key2':'value2']")
-      //createException('RC103')
-      throw new IllegalArgumentException('RC103')
+      throw createException('RC103')
+      //throw new IllegalArgumentException('RC103')
     }
   }
 }
