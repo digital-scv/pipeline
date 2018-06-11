@@ -142,7 +142,7 @@ private def setSystemProperties(command, config, logger) {
     } else {
       logger.error("System Properties only support Map type parameter.")
       logger.error("example : ['key1':'value1','key2':'value2']")
-      createException('RC103')
+      //createException('RC103')
       throw new IllegalArgumentException('RC103')
     }
   }
