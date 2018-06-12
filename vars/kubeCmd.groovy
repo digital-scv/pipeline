@@ -323,10 +323,18 @@ def rolloutStatus(ret) {
       try {
         sh command.toString()
       } catch (Exception e) {
-        logger.error("Exception occured while running rollout status : ${config.jsonpath}")
-        if (config.throwException == true) {
+        // https://wiki.jenkins.io/display/JENKINS/Job+Exit+Status
+        // You sent it a signal with the UNIX kill command, or SGE command qdel. 
+        // If you don't specify which signal to send, kill defaults to SIGTERM (exit code 15+128=143) 
+        // and qdel sends SIGINT (exit code 2+128=130), then SIGTERM, then SIGKILL until your job dies.
+        // TIMEOUT 
+        if (e.getMessage().contains('143')) {
+          throw e
+        } else {
+          logger.error("Exception occured while running rollout status : ${config.resource}")
           throw createException('RC307', e, config.jsonpath)
         }
+
       }
     }
   } catch (Exception e) {
