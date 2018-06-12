@@ -279,9 +279,9 @@ def rolloutStatus(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret, [wait: 300])
   
-  if (!(wait instanceof Integer)) {
-    logger.error('wait value must be Integer but received class ${wait.getClass().toString()}')
-    throw createException('RC313', wait.getClass().toString())
+  if (!(config.wait instanceof Integer)) {
+    logger.error('wait value must be Integer but received class ${config.wait.getClass().toString()}')
+    throw createException('RC313', config.wait.getClass().toString())
   }
   
   def value = ''
@@ -363,9 +363,9 @@ def rolloutStatus(ret) {
  * excute apply command with file.
  */
 private def executeApplyFile(command, config, logger) {
-  if (!(wait instanceof Integer)) {
-    logger.error('wait value must be Integer but received class ${wait.getClass().toString()}')
-    throw createException('RC313', wait.getClass().toString())
+  if (!(config.wait instanceof Integer)) {
+    logger.error('wait value must be Integer but received class ${config.wait.getClass().toString()}')
+    throw createException('RC313', config.wait.getClass().toString())
   }
 
   def exists = false
