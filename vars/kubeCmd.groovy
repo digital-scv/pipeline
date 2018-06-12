@@ -71,7 +71,7 @@ def describe(ret) {
           }.join()
       } else if (config.label instanceof Map) {
         command.append config.label.collect { k, v ->
-            logger.debug("LABEL-SELECTOR : ${k} = ${v}")
+            logger.debug("LABEL-SELECTOR : ${k}=${v}")
             return " -l ${k}=${v}"
           }.join()
       } else {
@@ -81,8 +81,8 @@ def describe(ret) {
         }
       }
     } else {
+      logger.error('describe : type value should be used with name or label.')
       if (config.throwException == true) {
-        logger.error('describe : type value should be used with name or label.')
         throw createException('RC302')
       }
     }
@@ -147,7 +147,7 @@ def resourceExists(ret) {
           }.join()
       } else if (config.label instanceof Map) {
         command.append config.label.collect { k, v ->
-            logger.debug("LABEL-SELECTOR : ${k} = ${v}")
+            logger.debug("LABEL-SELECTOR : ${k}=${v}")
             return " -l ${k}=${v}"
           }.join()
       } else {
@@ -183,8 +183,8 @@ def resourceExists(ret) {
     def status = sh script: "${command.toString()}", returnStatus: true
     result = status == 0 ? true : false
   } catch (Exception e) {
+    logger.error('Exception occured while checking resource is exist : ${command.toString()}')
     if (config.throwException == true) {
-      logger.error('Exception occured while checking resource is exist : ${command.toString()}')
       throw createException('RC309', e, command.toString())
     }
   }
