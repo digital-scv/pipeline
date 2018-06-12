@@ -62,13 +62,24 @@ def describe(ret) {
       // kubectl describe type name
       logger.debug("RESOURCE NAME : ${config.name}")
       command.append(" ${config.name}")
-    } else if ((config.label instanceof List) || config.label.getClass().isArray()) {
-      // kubectl describe type -l [key=value]+
-      command.append(" -l ")
-      command.append config.label.collect{ l ->
-        logger.debug("LABEL-SELECTOR : ${l}")
-        return "${l}"
-      }.join(',')
+    } else if (config.label) {
+      if ((config.label instanceof List) || config.label.getClass().isArray()) {
+        // kubectl describe type [-l key=value ]+
+        command.append config.label.collect{ l ->
+            logger.debug("LABEL-SELECTOR : ${l}")
+            return " -l ${l}"
+          }.join()
+      } else if (config.label instanceof Map) {
+        command.append config.label.collect { k, v ->
+            logger.debug("LABEL-SELECTOR : ${k} = ${v}")
+            return " -l ${k}=${v}"
+          }.join()
+      } else {
+        logger.error('describe : label only support Map, List, Array type parameter.')
+        if (config.throwException == true) {
+          throw createException('RC311')
+        }
+      }
     } else {
       if (config.throwException == true) {
         logger.error('describe : type value should be used with name or label.')
@@ -127,16 +138,27 @@ def resourceExists(ret) {
       // kubectl describe type name
       logger.debug("RESOURCE NAME : ${config.name}")
       command.append(" ${config.name}")
-    } else if ((config.label instanceof List) || config.label.getClass().isArray()) {
-      // kubectl describe type -l [key=value]+
-      command.append(" -l ")
-      command.append config.label.collect{ l ->
-        logger.debug("LABEL-SELECTOR : ${l}")
-        return "${l}"
-      }.join(',')
+    } else if (config.label) {
+      if ((config.label instanceof List) || config.label.getClass().isArray()) {
+        // kubectl describe type [-l key=value ]+
+        command.append config.label.collect{ l ->
+            logger.debug("LABEL-SELECTOR : ${l}")
+            return " -l ${l}"
+          }.join()
+      } else if (config.label instanceof Map) {
+        command.append config.label.collect { k, v ->
+            logger.debug("LABEL-SELECTOR : ${k} = ${v}")
+            return " -l ${k}=${v}"
+          }.join()
+      } else {
+        logger.error('resourceExists : label only support Map, List, Array type parameter.')
+        if (config.throwException == true) {
+          throw createException('RC311')
+        }
+      }
     } else {
+      logger.error('resourceExists : type value should be used with name or label.')
       if (config.throwException == true) {
-        logger.error('resourceExists : type value should be used with name or label.')
         throw createException('RC302')
       }
       return result
