@@ -347,7 +347,7 @@ def rolloutStatus(ret) {
       throw e
     }
 
-    logger.debug("Timeout occured while ${resource} being applied. Check events.")
+    logger.error("Timeout occured while ${resource} being applied. Check events.")
     
     config2.put('throwException', false)
     describe config2
