@@ -21,13 +21,13 @@ class RetortException extends RuntimeException {
    * @param   c   the errorcode.
    */
   public RetortException(String code) {
-      super(MessageUtil.getMessage(code))
+      super("[${code}] " + MessageUtil.getMessage(code))
 
       this.errorCode = code
   }
   
   public RetortException(String code, String... args) {
-      super(MessageUtil.getMessage(code, args))
+      super("[${code}] " + MessageUtil.getMessage(code, args))
       
       this.errorCode = code
       this.args = args
@@ -44,13 +44,13 @@ class RetortException extends RuntimeException {
    *         unknown.)
    */
   public RetortException(String code, Throwable cause) {
-      super(MessageUtil.getMessage(code), cause);
+      super("[${code}] " + MessageUtil.getMessage(code), cause);
       
       this.errorCode = code
   }
   
   public RetortException(String code, Throwable cause, String... args) {
-      super(MessageUtil.getMessage(code, args), cause);
+      super("[${code}] " + MessageUtil.getMessage(code, args), cause);
       
       this.errorCode = code
       this.args = args
