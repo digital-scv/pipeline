@@ -13,7 +13,7 @@ import static retort.utils.Utils.delegateParameters as getParam
  */
 def apply(ret) {
   Logger logger = Logger.getLogger(this)
-  def config = getParam(ret, [wait: 300])
+  def config = getParam(ret, [wait: 300, recoverOnFail: false])
   
   def command = new StringBuffer('kubectl apply')
   if (config.file) {
@@ -158,8 +158,8 @@ def resourceExists(ret) {
   }
   
   try {
-    def lines = sh script: "${command.toString()} | wc -l", returnStdout: true
-    result = lines.toInteger() > 0 ? true : false
+    def result = sh script: "${command.toString()}", returnStatus: true
+    result = result == 0 ? true : false
   } catch (Exception e) {
     if (config.throwException == true) {
       logger.error('Exception occured while checking resource is exist : ${command.toString()}')
@@ -173,9 +173,9 @@ def resourceExists(ret) {
 /**
  * kubectl get with json path
  *
- * @param file
  * @param type
  * @param name
+ * @param file
  * @param jsonpath 
  * @param namespace
  * @param throwException : false throw Exception 
@@ -237,9 +237,9 @@ def getValue(ret) {
 /**
  * kubectl rollout status
  *
- * @param file
  * @param type
  * @param name
+ * @param file
  * @param namespace
  * @param wait : 300
  * @param throwException : false throw Exception 
