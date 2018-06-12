@@ -358,6 +358,80 @@ def rolloutStatus(ret) {
 }
 
 
+/**
+ * kubectl rollout undo
+ *
+ * @param type
+ * @param name
+ * @param file
+ * @param revision
+ * @param namespace
+ * @param wait : 300
+ */
+def rolloutUndo(ret) {
+  Logger logger = Logger.getLogger(this)
+  def config = getParam(ret, [wait: 300])
+  
+  if (!(config.wait instanceof Integer)) {
+    logger.error("wait value must be Integer but received ${config.wait.getClass().toString()}")
+    throw createException('RC313', config.wait.getClass().toString())
+  }
+  
+  def value = ''
+  def command = new StringBuffer('kubectl rollout undo')
+  
+  if (config.type && config.name) {
+    logger.debug("RESOURCE TYPE : ${config.type}")
+    command.append(" ${config.type}")
+    
+    // kubectl get type name
+    logger.debug("RESOURCE NAME : ${config.name}")
+    command.append(" ${config.name}")
+  } else if (config.file) {
+    logger.debug("RESOURCE FILE : ${config.file}")
+    command.append(" -f ${config.file}")
+  } else {
+    logger.error('rolloutUndo : type and name values are required. or specify file value.')
+    throw createException('RC303')
+  }
+  
+  if (config.namespace) {
+    logger.debug("NAMESPACE : ${config.namespace}")
+    command.append(" -n ${config.namespace}")
+  }
+  
+  if (config.revision) {
+    logger.debug("TO REVISION : ${config.revision}")
+    command.append(" --to-revision=${config.revision}")
+  }
+  
+  def config2 = config.clone()
+  config2.put('jsonpath', '{.kind}/{.metadata.name}')
+  def resource
+  try {
+    resource = getValue config2
+  } catch (Exception e2) {
+    if (config.type && config.name) {
+      resource = "${config.type}/${config.name}"
+    } else {
+      resource = config.file
+    }
+  }
+  
+  try {
+    sh command.toString()
+  } catch (Exception e) {
+    logger.error("Exception occured while running rollout undo command : ${command.toString()}")
+    throw createException('RC314', e, command.toString())
+  }
+  
+  if (config.wait > 0) {
+    rolloutStatus config
+  }
+  
+}
+
+
 
 /**
  * excute apply command with file.
@@ -404,6 +478,7 @@ private def executeApplyFile(command, config, logger) {
 private def recoverApply(exists, config, logger) {
   if (exists) {
      // rollback
+     rolloutUndo(config)
   } else {
     // delete        
   }
