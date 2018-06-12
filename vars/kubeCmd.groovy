@@ -336,7 +336,7 @@ def rolloutStatus(ret) {
         if (e.getMessage().contains('143')) {
           throw e
         } else {
-          logger.error("Exception occured while running rollout status : ${config.resource}")
+          logger.error("Exception occured while running rollout status : ${resource}")
           throw createException('RC307', e, config.jsonpath)
         }
 
