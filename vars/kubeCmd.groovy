@@ -158,8 +158,8 @@ def resourceExists(ret) {
   }
   
   try {
-    def result = sh script: "${command.toString()}", returnStatus: true
-    result = result == 0 ? true : false
+    def status = sh script: "${command.toString()}", returnStatus: true
+    result = status == 0 ? true : false
   } catch (Exception e) {
     if (config.throwException == true) {
       logger.error('Exception occured while checking resource is exist : ${command.toString()}')
