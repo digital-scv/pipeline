@@ -338,7 +338,7 @@ def rolloutStatus(ret) {
       }
     }
   } catch (Exception e) {
-    if (e instanceof RetortException && e.getErrorCode == 'RC307') {
+    if (e instanceof RetortException && e.getErrorCode() == 'RC307') {
       throw e
     }
 
