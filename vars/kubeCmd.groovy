@@ -5,7 +5,8 @@ import static retort.utils.Utils.delegateParameters as getParam
 /**
  * kubectl apply
  *
- * @param file required. resource file. YAML or json
+ * @param file resource file. YAML or json
+ * @param folder resource folder.
  * @param namespace namespace
  * @param recoverOnFail Delete resource when fail applying.
  * @param option apply option
@@ -18,6 +19,9 @@ def apply(ret) {
   def command = new StringBuffer('kubectl apply')
   if (config.file) {
     logger.debug("FILE : ${config.file}")
+    command.append(" -f ${config.file}")
+  } else if (config.folder) {
+    logger.debug("FOLDER : ${config.file}")
     command.append(" -f ${config.file}")
   } else {
     throw createException('RC301')   
@@ -35,7 +39,12 @@ def apply(ret) {
   
   command.append(" --record=true")
 
-  executeApply(command, config, logger)
+  if (config.file) {
+    executeApplyFile(command, config, logger)
+  } else if (config.folder) {
+    executeApplyFolder(command, config, logger)
+  }
+
 }
 
 /**
@@ -338,9 +347,9 @@ def rolloutStatus(ret) {
 
 
 /**
- * excute apply command.
+ * excute apply command with file.
  */
-private def executeApply(command, config, logger) {
+private def executeApplyFile(command, config, logger) {
   
   def exists = false
   try {
@@ -355,11 +364,18 @@ private def executeApply(command, config, logger) {
     }
     
   } catch (Exception e) {
-    logger.error()
-    if (config.recoverOnFail && e instanceof RetortException) {
-      recoverApply(exists, config, logger)
+    if (e instanceof RetortException) {
+      logger.error('Exception occured while waiting rollout.')
+      if (config.recoverOnFail) {
+        recoverApply(exists, config, logger)
+      }
+      throw createException('RC312', e, config.file)
+      
+    } else {
+      logger.error('Exception occured while applying.')
+      throw createException('RC310', e, config.file)
     }
-    throw createException('RC310', e, config.file)
+
   }
 
 }
@@ -377,4 +393,18 @@ private def recoverApply(exists, config, logger) {
 
 }
 
-
+/**
+ * excute apply command with folder.
+ */
+private def executeApplyFolder(command, config, logger) {
+  try {
+    // no need to recover
+    sh command.toString()
+  } catch (Exception e) {
+    logger.error()
+    if (config.recoverOnFail && e instanceof RetortException) {
+      recoverApply(exists, config, logger)
+    }
+    throw createException('RC310', e, config.file)
+  }
+}
