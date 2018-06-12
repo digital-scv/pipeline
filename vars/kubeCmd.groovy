@@ -279,6 +279,11 @@ def rolloutStatus(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret, [wait: 300])
   
+  if (!(wait instanceof Integer)) {
+    logger.error('wait value must be Integer but received class ${wait.getClass().toString()}')
+    throw createException('RC313', wait.getClass().toString())
+  }
+  
   def value = ''
   def command = new StringBuffer('kubectl rollout status')
   
@@ -358,7 +363,11 @@ def rolloutStatus(ret) {
  * excute apply command with file.
  */
 private def executeApplyFile(command, config, logger) {
-  
+  if (!(wait instanceof Integer)) {
+    logger.error('wait value must be Integer but received class ${wait.getClass().toString()}')
+    throw createException('RC313', wait.getClass().toString())
+  }
+
   def exists = false
   try {
     exists = resourceExists config
@@ -366,10 +375,11 @@ private def executeApplyFile(command, config, logger) {
     // no need to recover
     sh command.toString()
 
-    // recover
-    if (config.wait instanceof Integer && config.wait > 0) {
+    // rollout
+    if (config.wait > 0) {
       rolloutStatus config
     }
+
     
   } catch (Exception e) {
     if (e instanceof RetortException) {
