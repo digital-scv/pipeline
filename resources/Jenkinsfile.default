@@ -1,6 +1,8 @@
 // Container Slave
 node(env.label) {
-  checkout scm
+  stage('*checkout') {
+    checkout scm
+  }
 
   def conf = yaml.load(env._config)
   for(name in conf.stage) {

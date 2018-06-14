@@ -39,8 +39,17 @@ class Utils {
     return config
   }
 
-  static def consistOf(def obj, def type){
+  static def consistOf(def obj, Class... type){
     //Reduce (http://mrhaki.blogspot.com/2009/09/groovy-goodness-using-inject-method.html)
-    obj in List && obj.inject(true){r,e -> r && e in type}  
+    obj in List && obj.inject(true){r,e -> r && type.find{e in it}}  
+  }
+
+  static def isIn(def obj, Class... type){
+    //Reduce (http://mrhaki.blogspot.com/2009/09/groovy-goodness-using-inject-method.html)
+    return obj && type.find{obj in it}  
+  }
+
+  static def isString(def obj){
+    return isIn(obj, String, GString)
   }
 }

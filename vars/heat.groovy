@@ -27,8 +27,17 @@ def call(String... names){
       Binding b = new Binding(conf.env)
       GroovyShell sh = new GroovyShell(b)
 
+      /*
+       * Serialize Collection as String
+       * - http://groovy.329449.n5.nabble.com/How-to-convert-String-1-2-3-to-List-tp4500137p4500155.html
+       * - http://mrhaki.blogspot.com/2015/09/groovy-goodness-inspect-method-returns.html
+       */ 
       conf.env.each {
-        env[it.key] = sh.evaluate("\"$it.value\"")
+        def val = it.value
+        if(it.value in Map || it.value in List)
+          val = val.inspect()
+
+        env[it.key] = sh.evaluate("\"$val\"")
       }
     }
 

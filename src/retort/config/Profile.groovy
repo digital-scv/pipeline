@@ -21,6 +21,10 @@ public class Profile {
 	public String[] candidate(String[] names, String... defs){
 		names = names ?: defs
 
+		if(env.CONF_LOCATION){
+			names = names.collect{return "${env.CONF_LOCATION}/$it"}	
+		}
+
 		if(!env.PROFILE)
 			return names
 
@@ -31,7 +35,7 @@ public class Profile {
 			r << e	
 		}
 
-		logger.info("Config files order :: ${cand} with [PROFILE:'$env.PROFILE', names=${names}]")
+		logger.info("Config files order :: ${cand} with [PROFILE:'$env.PROFILE', CONF_LOCATION:'$env.CONF_LOCATION' names=${names}]")
 		return cand
 	}
 }
