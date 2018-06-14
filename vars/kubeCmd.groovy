@@ -537,13 +537,19 @@ private def executeApplyFile(command, config, logger) {
 
     
   } catch (Exception e) {
+    // Exception from rollout status
+    // need to rollback
     if (e instanceof RetortException) {
       logger.error('Exception occured while waiting rollout.')
       if (config.recoverOnFail) {
+        logger.debug('RECOVER_ON_FAIL : true')
+        logger.debug('Trying to recover.')
         recoverApply(exists, config, logger)
       }
       throw createException('RC312', e, config.file)
       
+    // Exception from command execution
+    // can't rollback. just throw exception.
     } else {
       logger.error('Exception occured while applying.')
       throw createException('RC310', e, config.file)
@@ -559,9 +565,11 @@ private def executeApplyFile(command, config, logger) {
 private def recoverApply(exists, config, logger) {
   if (exists) {
      // rollback
+     logger.debug('Resource rollback.')
      rolloutUndo config
   } else {
     // delete        
+     logger.debug('Resource delete.')
     delete config
   }
 }
