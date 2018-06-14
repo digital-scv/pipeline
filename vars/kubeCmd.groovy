@@ -351,7 +351,11 @@ def rolloutStatus(ret) {
       // timeout
       logger.error("Timeout occured while ${resourceKind}/${resourceName} being applied. Check events.")
       
+      config2 = config.clone()
+      config2.put('type', 'pod')
+      config2.put('name', resourceName)
       config2.put('throwException', false)
+      
       describe config2
       throw createException('RC308', e, "${resourceKind}/${resourceName}")
     }
