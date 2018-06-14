@@ -311,7 +311,7 @@ def rolloutStatus(ret) {
       resourceName = resource.tokenize('/')[1]
     } catch (Exception e2) {
       logger.error("Resource does not exists. Can not execute rollout status.")
-      throw createException('RC316')
+      throw createException('RC316', "rollout status")
     }
     
     def rolloutPossibleResources = ['deployment', 'daemonset', 'statefullset']
@@ -349,11 +349,11 @@ def rolloutStatus(ret) {
       }
   
       // timeout
-      logger.error("Timeout occured while ${resource} being applied. Check events.")
+      logger.error("Timeout occured while ${resourceKind}/${resourceName} being applied. Check events.")
       
       config2.put('throwException', false)
       describe config2
-      throw createException('RC308', e, resource)
+      throw createException('RC308', e, "${resourceKind}/${resourceName}")
     }
   } catch (Exception e) {
     if (config.throwException == true) {
@@ -421,8 +421,8 @@ def rolloutUndo(ret) {
     resourceKind = resource.tokenize('/')[0]
     resourceName = resource.tokenize('/')[1]
   } catch (Exception e2) {
-    logger.error("Resource does not exists. Can not execute rollout status.")
-    throw createException('RC316')
+    logger.error("Resource does not exists. Can not execute rollout undo.")
+    throw createException('RC316', "rollout undo")
   }
   
   def rolloutPossibleResources = ['deployment', 'daemonset', 'statefullset']
@@ -485,22 +485,23 @@ def delete(ret) {
   }
   
   def config2 = config.clone()
-  config2.put('jsonpath', '{.kind}/{.metadata.name}')
-  def resource
+  def resourceKind
+  def resourceName
   try {
-    resource = getValue config2
+    config2.put('jsonpath', '{.kind}/{.metadata.name}')
+    def resource = getValue config2
+    
+    resourceKind = resource.tokenize('/')[0]
+    resourceName = resource.tokenize('/')[1]
   } catch (Exception e2) {
-    if (config.type && config.name) {
-      resource = "${config.type}/${config.name}"
-    } else {
-      resource = config.file
-    }
+    logger.error("Resource does not exists. Can not execute delete.")
+    throw createException('RC316', 'delete')
   }
   
   try {
     sh command.toString()
   } catch (Exception e) {
-    logger.error("Exception occured while running rollout undo command : ${command.toString()}")
+    logger.error("Exception occured while running delete command : ${command.toString()}")
     throw createException('RC315', e, command.toString())
   }
   
