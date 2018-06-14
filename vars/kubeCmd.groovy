@@ -284,7 +284,6 @@ def rolloutStatus(ret) {
     throw createException('RC313', config.wait.getClass().toString())
   }
   
-  def value = ''
   def command = new StringBuffer('kubectl rollout status')
   
   if (config.type && config.name) {
@@ -377,7 +376,6 @@ def rolloutUndo(ret) {
     throw createException('RC313', config.wait.getClass().toString())
   }
   
-  def value = ''
   def command = new StringBuffer('kubectl rollout undo')
   
   if (config.type && config.name) {
@@ -431,6 +429,67 @@ def rolloutUndo(ret) {
   
 }
 
+/**
+ * kubectl delete
+ *
+ * @param type
+ * @param name
+ * @param file
+ * @param namespace
+ * @param force
+ */
+def delete(ret) {
+  Logger logger = Logger.getLogger(this)
+  def config = getParam(ret)
+  
+  def command = new StringBuffer('kubectl delete')
+  
+  if (config.type && config.name) {
+    logger.debug("RESOURCE TYPE : ${config.type}")
+    command.append(" ${config.type}")
+    
+    // kubectl get type name
+    logger.debug("RESOURCE NAME : ${config.name}")
+    command.append(" ${config.name}")
+  } else if (config.file) {
+    logger.debug("RESOURCE FILE : ${config.file}")
+    command.append(" -f ${config.file}")
+  } else {
+    logger.error('delete : type and name values are required. or specify file value.')
+    throw createException('RC303')
+  }
+  
+  if (config.namespace) {
+    logger.debug("NAMESPACE : ${config.namespace}")
+    command.append(" -n ${config.namespace}")
+  }
+  
+  if (config.force == true) {
+    logger.debug("FORCE : ${config.force}")
+    command.append(" -force ${config.force}")
+  }
+  
+  def config2 = config.clone()
+  config2.put('jsonpath', '{.kind}/{.metadata.name}')
+  def resource
+  try {
+    resource = getValue config2
+  } catch (Exception e2) {
+    if (config.type && config.name) {
+      resource = "${config.type}/${config.name}"
+    } else {
+      resource = config.file
+    }
+  }
+  
+  try {
+    sh command.toString()
+  } catch (Exception e) {
+    logger.error("Exception occured while running rollout undo command : ${command.toString()}")
+    throw createException('RC315', e, command.toString())
+  }
+  
+}
 
 
 /**
@@ -478,12 +537,11 @@ private def executeApplyFile(command, config, logger) {
 private def recoverApply(exists, config, logger) {
   if (exists) {
      // rollback
-     rolloutUndo(config)
+     rolloutUndo config
   } else {
     // delete        
+    delete config
   }
-
-
 }
 
 /**
@@ -494,10 +552,7 @@ private def executeApplyFolder(command, config, logger) {
     // no need to recover
     sh command.toString()
   } catch (Exception e) {
-    logger.error()
-    if (config.recoverOnFail && e instanceof RetortException) {
-      recoverApply(exists, config, logger)
-    }
-    throw createException('RC310', e, config.file)
+    logger.error("Exception occured while applying : ${config.folder}")
+    throw createException('RC310', e, config.folder)
   }
 }
