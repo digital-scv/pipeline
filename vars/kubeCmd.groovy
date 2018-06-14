@@ -279,81 +279,95 @@ def rolloutStatus(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret, [wait: 300])
   
-  if (!(config.wait instanceof Integer)) {
-    logger.error("wait value must be Integer but received ${config.wait.getClass().toString()}")
-    throw createException('RC313', config.wait.getClass().toString())
-  }
-  
-  def command = new StringBuffer('kubectl rollout status')
-  
-  if (config.type && config.name) {
-    logger.debug("RESOURCE TYPE : ${config.type}")
-    command.append(" ${config.type}")
+  try {
+      
+    if (!(config.wait instanceof Integer)) {
+      logger.error("wait value must be Integer but received ${config.wait.getClass().toString()}")
+      throw createException('RC313', config.wait.getClass().toString())
+    }
     
-    // kubectl get type name
-    logger.debug("RESOURCE NAME : ${config.name}")
-    command.append(" ${config.name}")
-  } else if (config.file) {
-    logger.debug("RESOURCE FILE : ${config.file}")
-    command.append(" -f ${config.file}")
-  } else {
-    logger.error('rolloutStatus : type and name values are required. or specify file value.')
-    if (config.throwException == true) {
+    def command = new StringBuffer('kubectl rollout status')
+    
+    if (config.type && config.name) {
+      logger.debug("RESOURCE TYPE : ${config.type}")
+      command.append(" ${config.type}")
+      
+      // kubectl get type name
+      logger.debug("RESOURCE NAME : ${config.name}")
+      command.append(" ${config.name}")
+    } else if (config.file) {
+      logger.debug("RESOURCE FILE : ${config.file}")
+      command.append(" -f ${config.file}")
+    } else {
+      logger.error('rolloutStatus : type and name values are required. or specify file value.')
       throw createException('RC303')
     }
-  }
-  
-  if (config.namespace) {
-    logger.debug("NAMESPACE : ${config.namespace}")
-    command.append(" -n ${config.namespace}")
-  }
-  
-  def config2 = config.clone()
-  config2.put('jsonpath', '{.kind}/{.metadata.name}')
-  def resource
-  try {
-    resource = getValue config2
-  } catch (Exception e2) {
-    if (config.type && config.name) {
-      resource = "${config.type}/${config.name}"
-    } else {
-      resource = config.file
+    
+    if (config.namespace) {
+      logger.debug("NAMESPACE : ${config.namespace}")
+      command.append(" -n ${config.namespace}")
     }
-  }
-  
-  try {
-    logger.debug("Waiting for ${config.wait} seconds, during ${resource} being applied.")
-    timeout (time: config.wait, unit: 'SECONDS') {
-      try {
-        sh command.toString()
-      } catch (Exception e) {
-        // https://wiki.jenkins.io/display/JENKINS/Job+Exit+Status
-        // You sent it a signal with the UNIX kill command, or SGE command qdel. 
-        // If you don't specify which signal to send, kill defaults to SIGTERM (exit code 15+128=143) 
-        // and qdel sends SIGINT (exit code 2+128=130), then SIGTERM, then SIGKILL until your job dies.
-        // TIMEOUT 
-        if (e.getMessage().contains('143')) {
-          throw e
-        } else {
-          logger.error("Exception occured while running rollout status : ${resource}")
-          throw createException('RC307', e, config.jsonpath)
-        }
+    
+    def config2 = config.clone()
+    def resourceKind
+    def resourceName
+    try {
+      config2.put('jsonpath', '{.kind}/{.metadata.name}')
+      def resource = getValue config2
+      
+      resourceKind = resource.tokenize('/')[0]
+      resourceName = resource.tokenize('/')[1]
+    } catch (Exception e2) {
+      logger.error("Resource does not exists. Can not execute rollout status.")
+      throw createException('RC316')
+    }
+    
+    def rolloutPossibleResources = ['deployment', 'daemonset', 'statefullset']
+    if (!rolloutPossibleResources.contains(resourceKind.toLowerCase())) {
+      throw createException('RC317', resourceKind)
+    }
 
+    
+    try {
+      logger.debug("Waiting for ${config.wait} seconds, during ${resourceKind}/${resourceName} being applied.")
+      timeout (time: config.wait, unit: 'SECONDS') {
+        try {
+          sh command.toString()
+        } catch (Exception e) {
+          // https://wiki.jenkins.io/display/JENKINS/Job+Exit+Status
+          // You sent it a signal with the UNIX kill command, or SGE command qdel. 
+          // If you don't specify which signal to send, kill defaults to SIGTERM (exit code 15+128=143) 
+          // and qdel sends SIGINT (exit code 2+128=130), then SIGTERM, then SIGKILL until your job dies.
+          // TIMEOUT 
+          if (e.getMessage().contains('143')) {
+            throw e
+          } else {
+            logger.error("Exception occured while running rollout status : ${resourceKind}/${resourceName}")
+            throw createException('RC307', e, config.jsonpath)
+          }
+  
+        }
       }
+    } catch (Exception e) {
+      // sh fail
+      if (e instanceof RetortException && e.getErrorCode() == 'RC307') {
+        throw e
+      }
+  
+      // timeout
+      logger.error("Timeout occured while ${resource} being applied. Check events.")
+      
+      config2.put('throwException', false)
+      describe config2
+      throw createException('RC308', e, resource)
     }
   } catch (Exception e) {
-    if (e instanceof RetortException && e.getErrorCode() == 'RC307') {
+    if (config.throwException == true) {
       throw e
     }
 
-    logger.error("Timeout occured while ${resource} being applied. Check events.")
-    
-    config2.put('throwException', false)
-    describe config2
-    
-    throw createException('RC308', e, resource)
   }
-  
+
 }
 
 
@@ -404,16 +418,22 @@ def rolloutUndo(ret) {
   }
   
   def config2 = config.clone()
-  config2.put('jsonpath', '{.kind}/{.metadata.name}')
-  def resource
+  def resourceKind
+  def resourceName
   try {
-    resource = getValue config2
+    config2.put('jsonpath', '{.kind}/{.metadata.name}')
+    def resource = getValue config2
+    
+    resourceKind = resource.tokenize('/')[0]
+    resourceName = resource.tokenize('/')[1]
   } catch (Exception e2) {
-    if (config.type && config.name) {
-      resource = "${config.type}/${config.name}"
-    } else {
-      resource = config.file
-    }
+    logger.error("Resource does not exists. Can not execute rollout status.")
+    throw createException('RC316')
+  }
+  
+  def rolloutPossibleResources = ['deployment', 'daemonset', 'statefullset']
+  if (!rolloutPossibleResources.contains(resourceKind.toLowerCase())) {
+    throw createException('RC317', resourceKind)
   }
   
   try {
