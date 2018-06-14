@@ -63,63 +63,59 @@ def describe(ret) {
   
   def command = new StringBuffer('kubectl describe')
   
-  if (config.type) {
-    logger.debug("RESOURCE TYPE : ${config.type}")
-    command.append(" ${config.type}")
-    
-    if (config.name) {
-      // kubectl describe type name
-      logger.debug("RESOURCE NAME : ${config.name}")
-      command.append(" ${config.name}")
-    } else if (config.label) {
-      if ((config.label instanceof List) || config.label.getClass().isArray()) {
-        // kubectl describe type [-l key=value ]+
-        command.append config.label.collect{ l ->
-            logger.debug("LABEL-SELECTOR : ${l}")
-            return " -l ${l}"
-          }.join()
-      } else if (config.label instanceof Map) {
-        command.append config.label.collect { k, v ->
-            logger.debug("LABEL-SELECTOR : ${k}=${v}")
-            return " -l ${k}=${v}"
-          }.join()
-      } else {
-        logger.error('describe : label only support Map, List, Array type parameter.')
-        if (config.throwException == true) {
+  try {
+    if (config.type) {
+      logger.debug("RESOURCE TYPE : ${config.type}")
+      command.append(" ${config.type}")
+      
+      if (config.name) {
+        // kubectl describe type name
+        logger.debug("RESOURCE NAME : ${config.name}")
+        command.append(" ${config.name}")
+      } else if (config.label) {
+        if ((config.label instanceof List) || config.label.getClass().isArray()) {
+          // kubectl describe type [-l key=value ]+
+          command.append config.label.collect{ l ->
+              logger.debug("LABEL-SELECTOR : ${l}")
+              return " -l ${l}"
+            }.join()
+        } else if (config.label instanceof Map) {
+          command.append config.label.collect { k, v ->
+              logger.debug("LABEL-SELECTOR : ${k}=${v}")
+              return " -l ${k}=${v}"
+            }.join()
+        } else {
+          logger.error('describe : label only support Map, List, Array type parameter.')
           throw createException('RC311')
         }
-      }
-    } else {
-      logger.error('describe : type value should be used with name or label.')
-      if (config.throwException == true) {
+      } else {
+        logger.error('describe : type value should be used with name or label.')
         throw createException('RC302')
       }
-    }
-  } else if (config.file) {
-    logger.debug("RESOURCE FILE : ${config.file}")
-    command.append(" -f ${config.file}")
-  } else {
-    logger.error('describe : type and name values are required. or specify file value.')
-    if (config.throwException == true) {
+    } else if (config.file) {
+      logger.debug("RESOURCE FILE : ${config.file}")
+      command.append(" -f ${config.file}")
+    } else {
+      logger.error('describe : type and name values are required. or specify file value.')
       throw createException('RC303')
     }
-    return
-  }
-  
-  if (config.namespace) {
-    logger.debug("NAMESPACE : ${config.namespace}")
-    command.append(" -n ${config.namespace}")
-  }
-  
-  try {
-    sh command.toString()
-  } catch (Exception e) {
-    logger.error('Exception occured while running describe command : ${command.toString()}')
-    if (config.throwException == true) {
+    
+    if (config.namespace) {
+      logger.debug("NAMESPACE : ${config.namespace}")
+      command.append(" -n ${config.namespace}")
+    }
+    
+    try {
+      sh command.toString()
+    } catch (Exception e) {
+      logger.error('Exception occured while running describe command : ${command.toString()}')
       throw createException('RC306', e, command.toString())
     }
+  } catch (Exception e) {
+    if (config.throwException == true) {
+      throw e
+    }
   }
-
 }
 
 /**
@@ -139,62 +135,59 @@ def resourceExists(ret) {
   
   def command = new StringBuffer('kubectl get')
   def result = false
-  if (config.type) {
-    logger.debug("RESOURCE TYPE : ${config.type}")
-    command.append(" ${config.type}")
-    
-    if (config.name) {
-      // kubectl describe type name
-      logger.debug("RESOURCE NAME : ${config.name}")
-      command.append(" ${config.name}")
-    } else if (config.label) {
-      if ((config.label instanceof List) || config.label.getClass().isArray()) {
-        // kubectl describe type [-l key=value ]+
-        command.append config.label.collect{ l ->
-            logger.debug("LABEL-SELECTOR : ${l}")
-            return " -l ${l}"
-          }.join()
-      } else if (config.label instanceof Map) {
-        command.append config.label.collect { k, v ->
-            logger.debug("LABEL-SELECTOR : ${k}=${v}")
-            return " -l ${k}=${v}"
-          }.join()
-      } else {
-        logger.error('resourceExists : label only support Map, List, Array type parameter.')
-        if (config.throwException == true) {
-          throw createException('RC311')
-        }
-      }
-    } else {
-      logger.error('resourceExists : type value should be used with name or label.')
-      if (config.throwException == true) {
-        throw createException('RC302')
-      }
-      return result
-    }
-  } else if (config.file) {
-    logger.debug("RESOURCE FILE : ${config.file}")
-    command.append(" -f ${config.file}")
-  } else {
-    logger.error('resourceExists : type and name values are required. or specify file value.')
-    if (config.throwException == true) {
-      throw createException('RC303')
-    }
-    return result
-  }
-  
-  if (config.namespace) {
-    logger.debug("NAMESPACE : ${config.namespace}")
-    command.append(" -n ${config.namespace}")
-  }
   
   try {
-    def status = sh script: "${command.toString()}", returnStatus: true
-    result = status == 0 ? true : false
-  } catch (Exception e) {
-    logger.error('Exception occured while checking resource is exist : ${command.toString()}')
-    if (config.throwException == true) {
+    if (config.type) {
+      logger.debug("RESOURCE TYPE : ${config.type}")
+      command.append(" ${config.type}")
+      
+      if (config.name) {
+        // kubectl describe type name
+        logger.debug("RESOURCE NAME : ${config.name}")
+        command.append(" ${config.name}")
+      } else if (config.label) {
+        if ((config.label instanceof List) || config.label.getClass().isArray()) {
+          // kubectl describe type [-l key=value ]+
+          command.append config.label.collect{ l ->
+              logger.debug("LABEL-SELECTOR : ${l}")
+              return " -l ${l}"
+            }.join()
+        } else if (config.label instanceof Map) {
+          command.append config.label.collect { k, v ->
+              logger.debug("LABEL-SELECTOR : ${k}=${v}")
+              return " -l ${k}=${v}"
+            }.join()
+        } else {
+          logger.error('resourceExists : label only support Map, List, Array type parameter.')
+          throw createException('RC311')
+        }
+      } else {
+        logger.error('resourceExists : type value should be used with name or label.')
+        throw createException('RC302')
+      }
+    } else if (config.file) {
+      logger.debug("RESOURCE FILE : ${config.file}")
+      command.append(" -f ${config.file}")
+    } else {
+      logger.error('resourceExists : type and name values are required. or specify file value.')
+      throw createException('RC303')
+    }
+    
+    if (config.namespace) {
+      logger.debug("NAMESPACE : ${config.namespace}")
+      command.append(" -n ${config.namespace}")
+    }
+    
+    try {
+      def status = sh script: "${command.toString()}", returnStatus: true
+      result = status == 0 ? true : false
+    } catch (Exception e) {
+      logger.error('Exception occured while checking resource is exist : ${command.toString()}')
       throw createException('RC309', e, command.toString())
+    }
+  } catch (Exception e) {
+    if (config.throwException == true) {
+      throw e
     }
   }
   
@@ -219,48 +212,47 @@ def getValue(ret) {
   def value = ''
   def command = new StringBuffer('kubectl get')
   
-  if (config.type && config.name) {
-    logger.debug("RESOURCE TYPE : ${config.type}")
-    command.append(" ${config.type}")
-    
-    // kubectl get type name
-    logger.debug("RESOURCE NAME : ${config.name}")
-    command.append(" ${config.name}")
-  } else if (config.file) {
-    logger.debug("RESOURCE FILE : ${config.file}")
-    command.append(" -f ${config.file}")
-  } else {
-    logger.error('getValue : type and name values are required. or specify file value.')
-    if (config.throwException == true) {
+  try {
+    if (config.type && config.name) {
+      logger.debug("RESOURCE TYPE : ${config.type}")
+      command.append(" ${config.type}")
+      
+      // kubectl get type name
+      logger.debug("RESOURCE NAME : ${config.name}")
+      command.append(" ${config.name}")
+    } else if (config.file) {
+      logger.debug("RESOURCE FILE : ${config.file}")
+      command.append(" -f ${config.file}")
+    } else {
+      logger.error('getValue : type and name values are required. or specify file value.')
       throw createException('RC303')
     }
-    return value
-  }
-  
-  if (config.namespace) {
-    logger.debug("NAMESPACE : ${config.namespace}")
-    command.append(" -n ${config.namespace}")
-  }
-  
-  if (config.jsonpath) {
-    logger.debug("JSONPATH : ${config.jsonpath}")
-    command.append(" -o jsonpath=${config.jsonpath}")
-  } else {
-    logger.error('jsonpath value is required.')
-    if (config.throwException == true) {
+    
+    if (config.namespace) {
+      logger.debug("NAMESPACE : ${config.namespace}")
+      command.append(" -n ${config.namespace}")
+    }
+    
+    if (config.jsonpath) {
+      logger.debug("JSONPATH : ${config.jsonpath}")
+      command.append(" -o jsonpath=${config.jsonpath}")
+    } else {
+      logger.error('jsonpath value is required.')
       throw createException('RC304')
     }
-    return value
-  }
-  
-  try {
-    value = sh script: command.toString(), returnStdout: true
-  } catch (Exception e) {
-    logger.error("Exception occured while getting jsonpath : ${config.jsonpath}")
-    if (config.throwException == true) {
+    
+    try {
+      value = sh script: command.toString(), returnStdout: true
+    } catch (Exception e) {
+      logger.error("Exception occured while getting jsonpath : ${config.jsonpath}")
       throw createException('RC305', e, config.jsonpath)
     }
+  } catch (Exception e) {
+    if (config.throwException == true) {
+      throw e
+    }
   }
+
   
   return value
 }
@@ -324,6 +316,7 @@ def rolloutStatus(ret) {
     
     def rolloutPossibleResources = ['deployment', 'daemonset', 'statefullset']
     if (!rolloutPossibleResources.contains(resourceKind.toLowerCase())) {
+      logger.error("roleoutStatus : Rollout resource type must be Deployment, DaemonSet or StatefulSet. But received ${resourceKind}")
       throw createException('RC317', resourceKind)
     }
 
@@ -344,13 +337,12 @@ def rolloutStatus(ret) {
             throw e
           } else {
             logger.error("Exception occured while running rollout status : ${resourceKind}/${resourceName}")
-            throw createException('RC307', e, config.jsonpath)
+            throw createException('RC307', e, command.toString())
           }
   
         }
       }
     } catch (Exception e) {
-      logger.error('/////////////')
       // sh fail
       if (e instanceof RetortException && e.getErrorCode() == 'RC307') {
         throw e
@@ -435,6 +427,7 @@ def rolloutUndo(ret) {
   
   def rolloutPossibleResources = ['deployment', 'daemonset', 'statefullset']
   if (!rolloutPossibleResources.contains(resourceKind.toLowerCase())) {
+    logger.error("roleoutUndo : Rollout resource type must be Deployment, DaemonSet or StatefulSet. But received ${resourceKind}")
     throw createException('RC317', resourceKind)
   }
   
