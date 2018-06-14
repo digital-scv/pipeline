@@ -534,7 +534,7 @@ private def executeApplyFile(command, config, logger) {
     if (config.wait > 0) {
       def config2 = config.clone()
       config2.put('throwException', true)
-      rolloutStatus config
+      rolloutStatus config2
     }
 
     
