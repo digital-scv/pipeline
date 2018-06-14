@@ -530,6 +530,8 @@ private def executeApplyFile(command, config, logger) {
 
     // rollout
     if (config.wait > 0) {
+      def config2 = config.clone()
+      config2.put('throwException', true)
       rolloutStatus config
     }
 
