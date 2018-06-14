@@ -340,6 +340,7 @@ def rolloutStatus(ret) {
           // and qdel sends SIGINT (exit code 2+128=130), then SIGTERM, then SIGKILL until your job dies.
           // TIMEOUT 
           if (e.getMessage().contains('143')) {
+            logger.error('Timeout occured')
             throw e
           } else {
             logger.error("Exception occured while running rollout status : ${resourceKind}/${resourceName}")
