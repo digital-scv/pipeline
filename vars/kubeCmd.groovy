@@ -109,7 +109,7 @@ def describe(ret) {
       sh command.toString()
     } catch (Exception e) {
       logger.error('Exception occured while running describe command : ${command.toString()}')
-      throw createException('RC306', e, command.toString())
+      throw createException('RC306', e, 'describe', command.toString())
     }
   } catch (Exception e) {
     if (config.throwException == true) {
@@ -335,14 +335,14 @@ def rolloutStatus(ret) {
             throw e
           } else {
             logger.error("Exception occured while running rollout status : ${resourceKind}/${resourceName}")
-            throw createException('RC307', e, command.toString())
+            throw createException('RC306', e, 'rollout status', command.toString())
           }
   
         }
       }
     } catch (Exception e) {
       // sh fail
-      if (e instanceof RetortException && e.getErrorCode() == 'RC307') {
+      if (e instanceof RetortException && e.getErrorCode() == 'RC306') {
         throw e
       }
   
@@ -436,7 +436,7 @@ def rolloutUndo(ret) {
     sh command.toString()
   } catch (Exception e) {
     logger.error("Exception occured while running rollout undo command : ${command.toString()}")
-    throw createException('RC314', e, command.toString())
+    throw createException('RC306', e, 'rollout undo', command.toString())
   }
   
   if (config.wait > 0) {
@@ -502,7 +502,7 @@ def delete(ret) {
     sh command.toString()
   } catch (Exception e) {
     logger.error("Exception occured while running delete command : ${command.toString()}")
-    throw createException('RC315', e, command.toString())
+    throw createException('RC306', e, 'delete', command.toString())
   }
   
 }
@@ -573,15 +573,15 @@ def scale(ret) {
   try {
     sh command.toString()
   } catch (Exception e) {
-    logger.error("Exception occured while running delete command : ${command.toString()}")
-    throw createException('RC315', e, command.toString())
+    logger.error("Exception occured while running scale command : ${command.toString()}")
+    throw createException('RC306', e, 'scale', command.toString())
   }
   
   // rollout
   if (config.wait > 0) {
     def config3 = config.clone()
     config3.put('throwException', true)
-    rolloutStatus config2
+    rolloutStatus config3
   }
   
 }
