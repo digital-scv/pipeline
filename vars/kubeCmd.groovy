@@ -217,7 +217,6 @@ def getValue(ret) {
       logger.debug("RESOURCE TYPE : ${config.type}")
       command.append(" ${config.type}")
       
-      // kubectl get type name
       logger.debug("RESOURCE NAME : ${config.name}")
       command.append(" ${config.name}")
     } else if (config.file) {
@@ -284,7 +283,6 @@ def rolloutStatus(ret) {
       logger.debug("RESOURCE TYPE : ${config.type}")
       command.append(" ${config.type}")
       
-      // kubectl get type name
       logger.debug("RESOURCE NAME : ${config.name}")
       command.append(" ${config.name}")
     } else if (config.file) {
@@ -314,10 +312,10 @@ def rolloutStatus(ret) {
       throw createException('RC316', "rollout status")
     }
     
-    def rolloutPossibleResources = ['deployment', 'daemonset', 'statefullset']
+    def rolloutPossibleResources = ['deployment', 'deploy', 'daemonset', 'ds', 'statefullset', 'sts']
     if (!rolloutPossibleResources.contains(resourceKind.toLowerCase())) {
-      logger.error("roleoutStatus : Rollout resource type must be Deployment, DaemonSet or StatefulSet. But received ${resourceKind}")
-      throw createException('RC317', resourceKind)
+      logger.error("roleoutStatus : Rollout resource type must be ${rolloutPossibleResources}. But received ${resourceKind}")
+      throw createException('RC317', rolloutPossibleResources, resourceKind)
     }
 
     
@@ -394,7 +392,6 @@ def rolloutUndo(ret) {
     logger.debug("RESOURCE TYPE : ${config.type}")
     command.append(" ${config.type}")
     
-    // kubectl get type name
     logger.debug("RESOURCE NAME : ${config.name}")
     command.append(" ${config.name}")
   } else if (config.file) {
@@ -429,10 +426,10 @@ def rolloutUndo(ret) {
     throw createException('RC316', "rollout undo")
   }
   
-  def rolloutPossibleResources = ['deployment', 'daemonset', 'statefullset']
+  def rolloutPossibleResources = ['deployment', 'deploy', 'daemonset', 'ds', 'statefullset', 'sts']
   if (!rolloutPossibleResources.contains(resourceKind.toLowerCase())) {
-    logger.error("roleoutUndo : Rollout resource type must be Deployment, DaemonSet or StatefulSet. But received ${resourceKind}")
-    throw createException('RC317', resourceKind)
+    logger.error("roleoutUndo : Rollout resource type must be ${rolloutPossibleResources}. But received ${resourceKind}")
+    throw createException('RC317', rolloutPossibleResources, resourceKind)
   }
   
   try {
@@ -467,7 +464,6 @@ def delete(ret) {
     logger.debug("RESOURCE TYPE : ${config.type}")
     command.append(" ${config.type}")
     
-    // kubectl get type name
     logger.debug("RESOURCE NAME : ${config.name}")
     command.append(" ${config.name}")
   } else if (config.file) {
@@ -511,6 +507,84 @@ def delete(ret) {
   
 }
 
+/**
+ * kubectl delete
+ *
+ * @param type
+ * @param name
+ * @param file
+ * @param namespace
+ * @param replicas required.  num of replicas.
+ * @param wait : 300 
+ */
+def scale(ret) {
+  Logger logger = Logger.getLogger(this)
+  def config = getParam(ret, [wait: 300])
+  
+  def command = new StringBuffer('kubectl scale')
+  
+  if (config.type && config.name) {
+    logger.debug("RESOURCE TYPE : ${config.type}")
+    command.append(" ${config.type}")
+    
+    logger.debug("RESOURCE NAME : ${config.name}")
+    command.append(" ${config.name}")
+  } else if (config.file) {
+    logger.debug("RESOURCE FILE : ${config.file}")
+    command.append(" -f ${config.file}")
+  } else {
+    logger.error('scale : type and name values are required. or specify file value.')
+    throw createException('RC303')
+  }
+  
+  if (config.namespace) {
+    logger.debug("NAMESPACE : ${config.namespace}")
+    command.append(" -n ${config.namespace}")
+  }
+  
+  if (config.replicas) {
+    logger.debug("REPLICAS : ${config.replicas}")
+    command.append(" --replicas=${config.replicas}")
+  } else {
+    logger.error('replicas is required.')
+    throw createException('RC318')
+  }
+  
+  def config2 = config.clone()
+  def resourceKind
+  def resourceName
+  try {
+    config2.put('jsonpath', '{.kind}/{.metadata.name}')
+    def resource = getValue config2
+    
+    resourceKind = resource.tokenize('/')[0]
+    resourceName = resource.tokenize('/')[1]
+  } catch (Exception e2) {
+    logger.error("Resource does not exists. Can not execute scale.")
+    throw createException('RC316', 'scale')
+  }
+  
+  def scalePossibleResources = ['deployment', 'deploy', 'replicaset', 'rs', 'replicationcontrollers', 'rc', 'jobs']
+  if (!rolloutPossibleResources.contains(resourceKind.toLowerCase())) {
+    logger.error("scale : Scale resource type must be ${scalePossibleResources}. But received ${resourceKind}")
+    throw createException('RC317', scalePossibleResources, resourceKind)
+  }
+  
+  try {
+    sh command.toString()
+  } catch (Exception e) {
+    logger.error("Exception occured while running delete command : ${command.toString()}")
+    throw createException('RC315', e, command.toString())
+  }
+  
+  // rollout
+  if (config.wait > 0) {
+    def config2 = config.clone()
+    config2.put('throwException', true)
+    rolloutStatus config2
+  }
+  
+}
 
 /**
  * excute apply command with file.
