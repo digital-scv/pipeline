@@ -508,7 +508,7 @@ def delete(ret) {
 }
 
 /**
- * kubectl delete
+ * kubectl scale
  *
  * @param type
  * @param name
@@ -565,7 +565,7 @@ def scale(ret) {
   }
   
   def scalePossibleResources = ['deployment', 'deploy', 'replicaset', 'rs', 'replicationcontrollers', 'rc', 'jobs']
-  if (!rolloutPossibleResources.contains(resourceKind.toLowerCase())) {
+  if (!scalePossibleResources.contains(resourceKind.toLowerCase())) {
     logger.error("scale : Scale resource type must be ${scalePossibleResources}. But received ${resourceKind}")
     throw createException('RC317', scalePossibleResources, resourceKind)
   }
