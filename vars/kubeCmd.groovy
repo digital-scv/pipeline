@@ -579,8 +579,8 @@ def scale(ret) {
   
   // rollout
   if (config.wait > 0) {
-    def config2 = config.clone()
-    config2.put('throwException', true)
+    def config3 = config.clone()
+    config3.put('throwException', true)
     rolloutStatus config2
   }
   
