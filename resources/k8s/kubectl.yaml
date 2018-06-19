@@ -1,0 +1,5 @@
+containers:
+- name: kubectl
+  image: 'lachlanevenson/k8s-kubectl'
+  ttyEnabled: true
+  command: cat

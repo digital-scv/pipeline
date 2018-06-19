@@ -1,78 +1,19 @@
-/*
- * Sandbox : https://github.com/jenkinsci/script-security-plugin/blob/master/src/main/resources/org/jenkinsci/plugins/scriptsecurity/sandbox/whitelists/blacklist
- */
-node {
-    //Remove left indent
-    //- http://mrhaki.blogspot.kr/2010/06/groovy-goodness-strip-leading-spaces_20.html
-    stage('*parepare') {
-      echo """\
-        |Load Jenkinsfile.default
-        |+ Loaded pipeline config
-        |${env._config}""".stripMargin()
-    }
-    
-    // Can not set any Object values at ${env} because ${env.class} is Map<String, String>
-    def _config = yaml.load(env._config)
-    
-    //Check & Create slave containers
-    //- https://github.com/jenkinsci/kubernetes-plugin
-    //- https://stackoverflow.com/a/24189321
-    if(_config.agent && _config.agent.containers){
-        def label = "jenkins-${UUID.randomUUID().toString()}"
-        def _agent = _config.agent
-        def _containers = []
-        def _volumes = []
-        
-        // create container
-        _agent.containers.each {
-          _containers << containerTemplate(it)
-        }
-        
-        // create volumes
-        _agent.volumes?.each {
-          it.each {
-            //Loop of collection of map
-            //- https://stackoverflow.com/a/43269874
-            //Groovy dynamic method invokation
-            //- http://www.groovy-lang.org/metaprogramming.html#_dynamic_method_names
-            _volumes << "${it.key}"(it.value)
-          }
-        }
-        
-        echo _containers.join('\n')
-        echo _volumes.join('\n')
-        
-        _agent.containers = _containers
-        _agent.volumes = _volumes
-        _agent.label = label
-        
-        podTemplate(_agent) {
-              node(label) {
-                stage('* init stage on slave container ') {
-                  echo "init!"
-                }
+// Container Slave
+node(env.label) {
+  stage('*checkout') {
+    checkout scm
+  }
 
-                def action = {
-                  container(it.key) {
-                    stage("** BUILD: ${it.key}") {
-                      sh "${it.value}"
-                    }
-                  }
-                }
-
-                _config.build?.each {
-                  it.each action
-                }
-              } //node
-            } //pipeline
-    } //_config.agent?.containers
-    
-    //Build dynamic stages
-    _config.stage.each {
-      stage(it) {
-        echo """\
-        |**Load: ${_config[it]}
-        |${yaml.dump([(it): _config[it]])}""".stripMargin()
-      }
+  def conf = yaml.load(env._config)
+  for(name in conf.stage) {
+    stage(name) {
+      //eachMap(conf[name], ret)
+      conf[name].each { it.each {
+        container(it.key) {
+          def body = modular.eval2(it.key, it.value)
+          body()
+        }
+      }}
     }
+  }
 }

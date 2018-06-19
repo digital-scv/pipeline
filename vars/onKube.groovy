@@ -2,18 +2,31 @@
  * Sandbox : https://github.com/jenkinsci/script-security-plugin/blob/master/src/main/resources/org/jenkinsci/plugins/scriptsecurity/sandbox/whitelists/blacklist
  */
 import retort.agent.k8s.ContainerBuilder
+import static groovy.json.JsonOutput.toJson
 
-def call(Map config, String script){
+def run(Map config, String script){
 	def builder = new ContainerBuilder(this)
-	echo "${builder}"
+	builder.extend(config.agent ?: config)
 
-	def label = 'aaaa'
-	def args  = builder.extend(config).build()
-	echo "${args}"
+	run(builder, script)
+}
+
+def run(ContainerBuilder builder, String script){
+	def args  = builder.build()
+	env.label = "modular-${UUID.randomUUID().toString()}"
+	args.label = env.label
+	echo "$args"
 
 	podTemplate(args) {
+	  //Load prepared Jenkinsfiles (load and run string)
+      //- https://github.com/jenkinsci/workflow-cps-global-lib-plugin/blob/master/src/main/java/org/jenkinsci/plugins/workflow/libs/LibraryAdder.java#L194
+      //- https://stackoverflow.com/a/43327284
 	  evaluate script
 	}
+}
+
+def builder(String yaml){
+	return new ContainerBuilder(this, yaml)
 }
 
 // For advenced pipeline user
