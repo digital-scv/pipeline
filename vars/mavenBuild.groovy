@@ -52,7 +52,7 @@ def version(ret) {
   }
   
   def pom = readMavenPom file: config.pom
-  logger.debug("Original Version : ${pom.gerVersion()}")
+  logger.debug("Original Version : ${pom.getVersion()}")
   logger.debug("New Version : ${config.version}")
   pom.setVersion(config.version)
   
