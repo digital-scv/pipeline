@@ -69,8 +69,84 @@ ${updatedYamlText}
   writeFile file: config.file, text: updatedYamlText
 }
 
+/**
+ * file
+ * version
+ * deployName
+ * dockerImage
+ */
+def bluegreenDeployUpdate(ret) {
+  Logger logger = Logger.getLogger(this)
+  def config = getParam(ret)
+  
+  def version
+  if (config.version) {
+    version = config.version
+  } else if (env.VERSION) {
+    logger.debug("version is not set. Using env.VERSION")
+    version = env.VERSION
+  }
+  
+  def deployName
+  if (config.version) {
+    deployName = config.deployName
+  } else if (env.APP_NAME) {
+    logger.debug("deployName is not set. Using env.APP_NAME-version")
+    deployName = "${env.APP_NAME}-${version}" 
+  }
+  
+  def dockerImage
+  if (config.dockerImage) {
+    dockerImage = config.dockerImage
+  } else if (env.DOCKER_IMAGE) {
+    logger.debug("dockerImage is not set. Using env.DOCKER_REGISTRY, env.DOCKER_IMAGE, version")
+    if (env.DOCKER_REGISTRY) {
+      dockerImage = "${env.DOCKER_REGISTRY}/${env.DOCKER_IMAGE}:${version}"
+    } else {
+      dockerImage = "${env.DOCKER_IMAGE}:${version}" 
+    }
+  }
+  
+  def update = [
+    '.metadata.name': deployName,
+    '.metadata.labels.version': version,
+    '.spec.selector.matchLabels.version': version,
+    '.spec.template.metadata.labels.version': version,
+    '.spec.template.spec.containers[0].image': dockerImage
+  ]
+  
+  def config2 = config.clone()
+  config2.put('update', update) 
+  update config2
+}
+
+/**
+ * file
+ * version
+ */
+def bluegreenServiceUpdate(ret) {
+  Logger logger = Logger.getLogger(this)
+  def config = getParam(ret)
+  
+  def version
+  if (config.version) {
+    version = config.version
+  } else if (env.VERSION) {
+    logger.debug("version is not set. Using env.VERSION")
+    version = env.VERSION
+  }
+  
+  def update = ['.spec.selector.version': version]
+  
+  def config2 = config.clone()
+  config2.put('update', update) 
+  update config2
+}
+
+
+
 @NonCPS
-def dumpBlock(yaml) {
+private def dumpBlock(yaml) {
   DumperOptions options = new DumperOptions()
   options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)
   
