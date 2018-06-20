@@ -1,5 +1,7 @@
 @Grab('org.yaml:snakeyaml:1.17')
 import org.yaml.snakeyaml.Yaml as Parser
+import org.yaml.snakeyaml.DumperOptions
+
 
 import retort.utils.logging.Logger
 import static retort.utils.Utils.delegateParameters as getParam
@@ -57,7 +59,11 @@ ${yamlText}
   }
   
   logger.debug("${yaml}")
-  def updatedYamlText = dump(yaml)
+  
+  DumperOptions options = new DumperOptions()
+  options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)
+  
+  def updatedYamlText = new Parser(options).dump(yaml)
   
   logger.debug("""Updated yaml contents
 ${updatedYamlText}
