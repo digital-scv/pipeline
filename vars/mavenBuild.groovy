@@ -36,6 +36,30 @@ def call(ret) {
   
 }
 
+/**
+ * update maven pom version
+ *
+ * pom
+ * version
+ */
+def version(ret) {
+  Logger logger = Logger.getLogger(this)
+  def config = getParam(ret, [pom: 'pom.xml'])
+  
+  if (!config.version) {
+    logger.error('version value is required.')
+    createException('RC104')
+  }
+  
+  def pom = readMavenPom file: config.pom
+  logger.debug("Original Version : ${pom.gerVersion()}")
+  logger.debug("New Version : ${config.version}")
+  pom.setVersion(config.version)
+  
+  writeMavenPom model: pom
+}
+
+
 private def executeMvn(command, config, logger) {
   def settingsCommand = new StringBuffer()
   def configFiles = []
