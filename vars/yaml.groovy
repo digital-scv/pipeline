@@ -36,8 +36,8 @@ def update(def ret) {
   if (!config.update) {
     logger.error('file is required.')
     createException('RC402')
-  } else if (!(config.update in Map) && (!config.update in CharSequence)){
-    logger.error('update support Map or String type parameter.')
+  } else if (!(config.update in Map)){
+    logger.error('update only support Map type parameter.')
     createException('RC403')
   }
   
@@ -48,30 +48,15 @@ def update(def ret) {
 ${yamlText}
 """)
 
-  Map.metaClass.addNested = { Map rhs ->
-    def lhs = delegate
-    rhs.each { k, v -> lhs[k] = lhs[k] in Map ? lhs[k].addNested(v) : v }   
-    lhs
-  }
-
   def yaml = load(yamlText)
   
-  if (config.update in Map) {
-    config.update.each { k, v ->
-        def binding = new Binding(yaml:yaml)
-        def shell = new GroovyShell(binding)
-        def expression = "yaml${k} = '${v}'"
-        
-        shell.evaluate(expression)
-    }
-  } else {
-    def updateMap = load(config.update)
-    
-    
-    yaml.addNested(updateMap)
+  config.update.each { k, v ->
+      def binding = new Binding(yaml:yaml)
+      def shell = new GroovyShell(binding)
+      def expression = "yaml${k} = '${v}'"
+      
+      shell.evaluate(expression)
   }
-
-
   
   logger.debug("${yaml}")
   
