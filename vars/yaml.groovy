@@ -36,7 +36,7 @@ def update(def ret) {
   if (!config.update) {
     logger.error('file is required.')
     createException('RC402')
-  } else if (!(config.update in Map) && (config.update in CharSequence)){
+  } else if (!(config.update in Map) && (!config.update in CharSequence)){
     logger.error('update support Map or String type parameter.')
     createException('RC403')
   }
@@ -47,6 +47,12 @@ def update(def ret) {
   logger.debug("""Original yaml contents
 ${yamlText}
 """)
+
+  Map.metaClass.addNested = { Map rhs ->
+    def lhs = delegate
+    rhs.each { k, v -> lhs[k] = lhs[k] in Map ? lhs[k].addNested(v) : v }   
+    lhs
+  }
 
   def yaml = load(yamlText)
   
@@ -61,11 +67,6 @@ ${yamlText}
   } else {
     def updateMap = load(config.update)
     
-    Map.metaClass.addNested = { Map rhs ->
-      def lhs = delegate
-      rhs.each { k, v -> lhs[k] = lhs[k] in Map ? lhs[k].addNested(v) : v }   
-      lhs
-    }
     
     yaml.addNested(updateMap)
   }
