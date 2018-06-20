@@ -85,15 +85,23 @@ def bluegreenDeployUpdate(ret) {
   } else if (env.VERSION) {
     logger.debug("version is not set. Using env.VERSION")
     version = env.VERSION
+  } else {
+    logger.error('When calling bluegreenDeployUpdate function, set the version value or set it to property VERSION.')
+    createException('RC404')
   }
+
   
   def deployName
-  if (config.version) {
+  if (config.deployName) {
     deployName = config.deployName
   } else if (env.APP_NAME) {
     logger.debug("deployName is not set. Using env.APP_NAME-version")
     deployName = "${env.APP_NAME}-${version}" 
+  } else {
+    logger.error('When calling bluegreenDeployUpdate function, set the deployName value or set it to property APP_NAME.')
+    createException('RC405')
   }
+
   
   def dockerImage
   if (config.dockerImage) {
@@ -105,9 +113,12 @@ def bluegreenDeployUpdate(ret) {
     } else {
       dockerImage = "${env.DOCKER_IMAGE}:${version}" 
     }
+  } else {
+    logger.error('When calling bluegreenDeployUpdate function, set the dockerImage value or set it to property DOCKER_IMAGE.')
+    createException('RC406')
   }
   
-  def update = [
+  def data = [
     '.metadata.name': deployName,
     '.metadata.labels.version': version,
     '.spec.selector.matchLabels.version': version,
@@ -115,8 +126,10 @@ def bluegreenDeployUpdate(ret) {
     '.spec.template.spec.containers[0].image': dockerImage
   ]
   
+  logger.info("Updating ${config.file} with ${deployName}, ${version}, ${dockerImage}")
+  
   def config2 = config.clone()
-  config2.put('update', update) 
+  config2.put('update', data) 
   update config2
 }
 
@@ -126,7 +139,8 @@ def bluegreenDeployUpdate(ret) {
  */
 def bluegreenServiceUpdate(ret) {
   Logger logger = Logger.getLogger(this)
-  def config = getParam(ret)
+  def config = [version: env.VERSION ]
+  config = getParam(ret)
   
   def version
   if (config.version) {
@@ -134,12 +148,16 @@ def bluegreenServiceUpdate(ret) {
   } else if (env.VERSION) {
     logger.debug("version is not set. Using env.VERSION")
     version = env.VERSION
+  } else {
+    logger.error('When calling bluegreenServiceUpdate function, set the version value or set it to property VERSION.')
+    createException('RC404')
   }
+
   
-  def update = ['.spec.selector.version': version]
-  
+  def data = ['.spec.selector.version': version]
+  logger.info("Updating ${config.file} with ${version}")
   def config2 = config.clone()
-  config2.put('update', update) 
+  config2.put('update', data) 
   update config2
 }
 

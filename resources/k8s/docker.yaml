@@ -4,6 +4,7 @@ containers:
   ttyEnabled: true
   command: cat
 volumes:
-- hostPathVolume:
-    hostPath: '/var/run/docker.sock'
-    mountPath: '/var/run/docker.sock'
+- host:/var/run/docker.sock: /var/run/docker.sock
+#- hostPathVolume:
+#    hostPath: '/var/run/docker.sock'
+#    mountPath: '/var/run/docker.sock'

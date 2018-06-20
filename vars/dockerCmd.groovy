@@ -8,7 +8,7 @@ import static retort.utils.Utils.delegateParameters as getParam
  * @param registry
  * @param imageName
  * @param imageVersion
- * @param credentialId
+ * @param credentialsId
  * @param username
  * @param password
  */
@@ -26,8 +26,8 @@ def push(ret) {
   // 1. credential
   // 2. username/password
   // 3. anonymous
-  if (config.credentialId) {
-    pushWithCredentialId(config, command, logger)
+  if (config.credentialsId) {
+    pushWithCredentialsId(config, command, logger)
   } else if (config.username && config.password) {
     pushWithUsernameAndPassword(config, command, logger)                                    
   } else {
@@ -95,10 +95,10 @@ def tag(ret) {
 }
 
 
-private def pushWithCredentialId(config, command, logger) {
+private def pushWithCredentialsId(config, command, logger) {
   def loginCommand
-  logger.debug("Login with jenkins credential : ${config.credentialId}")
-  withCredentials([usernamePassword(credentialsId: config.credentialId, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USER')]) {
+  logger.debug("Login with jenkins credential : ${config.credentialsId}")
+  withCredentials([usernamePassword(credentialsId: config.credentialsId, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USER')]) {
     if (config.registry) {
       logger.debug("Registry : ${config.registry}")
       loginCommand = "docker login ${config.registry} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"

@@ -596,6 +596,7 @@ private def executeApplyFile(command, config, logger) {
   }
 
   def exists = false
+  def recoverConfig = config.clone()
   try {
     exists = resourceExists config
     
@@ -612,7 +613,9 @@ private def executeApplyFile(command, config, logger) {
         def resource = getValue config2
         
         resourceKind = resource.tokenize('/')[0]
+        recoverConfig.type = resourceKind
         resourceName = resource.tokenize('/')[1]
+        recoverConfig.name = resourceName
       } catch (Exception e2) {
       }
       
@@ -622,6 +625,10 @@ private def executeApplyFile(command, config, logger) {
         config3.put('throwException', true)
         rolloutStatus config3
       }
+    }
+    // print
+    if (!exists) {
+      resourceExists config
     }
 
     
@@ -633,7 +640,7 @@ private def executeApplyFile(command, config, logger) {
       if (config.recoverOnFail) {
         logger.debug('RECOVER_ON_FAIL : true')
         logger.debug('Trying to recover.')
-        recoverApply(exists, config, logger)
+        recoverApply(exists, recoverConfig, logger)
       }
       throw createException('RC312', e, config.file)
       
@@ -653,12 +660,23 @@ private def executeApplyFile(command, config, logger) {
  */
 private def recoverApply(exists, config, logger) {
   if (exists) {
-     // rollback
-     logger.debug('Resource rollback.')
-     rolloutUndo config
+    // rollback
+    logger.debug('Resource rollback.')
+     
+    def rolloutPossibleResources = ['deployment', 'deploy', 'daemonset', 'ds', 'statefullset', 'sts']
+    if (rolloutPossibleResources.contains(config.type.toLowerCase())) {
+      rolloutUndo config
+    } else if (config.recoverFile) {
+      def recoverConfig = config.clone()
+      recoverConfig.file = config.recoverFile
+      recoverConfig.recoverOnFail = false
+      recoverConfig.wait = 0
+      apply recoverConfig
+    }
+
   } else {
     // delete        
-     logger.debug('Resource delete.')
+    logger.debug('Resource delete.')
     delete config
   }
 }

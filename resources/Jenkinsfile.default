@@ -9,7 +9,8 @@ node(env.label) {
     stage(name) {
       //eachMap(conf[name], ret)
       conf[name].each { it.each {
-        container(it.key) {
+        def containerName = it.key.split('\\.')[0]
+        container(containerName) {
           def body = modular.eval2(it.key, it.value)
           body()
         }
