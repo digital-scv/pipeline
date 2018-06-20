@@ -53,7 +53,6 @@ ${yamlText}
       def binding = new Binding(yaml:yaml)
       def shell = new GroovyShell(binding)
       def expression = "yaml${k} = '${v}'"
-      logger.debug 
       
       shell.evaluate(expression)
   }
