@@ -7,9 +7,17 @@ import static retort.utils.Utils.isString
 
 def eval(String name){
 	switch(name){
-	  case 'maven':
-	  case 'maven2':
-	    return mavenBuild
+	  case 'maven':  return mavenBuild
+	  case 'docker.build':  return dockerCmd.&build
+	  case 'docker.push':   return dockerCmd.&push
+	  case 'kubectl.apply':           return kubeCmd.&apply
+	  case 'kubectl.describe':        return kubeCmd.&describe
+	  case 'kubectl.scale':           return kubeCmd.&scale
+	  case 'kubectl.delete':          return kubeCmd.&delete
+	  case 'kubectl.resourceExists':  return kubeCmd.&resourceExists
+	  case 'kubectl.getValue':        return kubeCmd.&getValue
+	  case 'kubectl.rolloutStatus':   return kubeCmd.&rolloutStatus
+	  case 'kubectl.rolloutUndo':     return kubeCmd.&rolloutUndo
 	}
 }
 
@@ -40,7 +48,7 @@ def eval2(String name, Object args){
 
 	def func = eval(name)
 	if(!func){
-	  throw new UnsupportedOperationException("Can not find step : ${name}")
+	  throw new UnsupportedOperationException("Can not find step : ${name} := $func")
 	}
 
     // maven
