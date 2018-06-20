@@ -60,14 +60,19 @@ ${yamlText}
   
   logger.debug("${yaml}")
   
-  DumperOptions options = new DumperOptions()
-  options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)
-  
-  def updatedYamlText = new Parser(options).dump(yaml)
+  def updatedYamlText = dumpBlock(yaml)
   
   logger.debug("""Updated yaml contents
 ${updatedYamlText}
 """)
 
   writeFile file: config.file, text: updatedYamlText
+}
+
+@NonCPS
+def dumpBlock(yaml) {
+  DumperOptions options = new DumperOptions()
+  options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)
+  
+  return new Parser(options).dump(yaml) 
 }
