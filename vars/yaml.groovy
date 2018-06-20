@@ -49,7 +49,7 @@ ${yamlText}
 
   def yaml = load(yamlText)
   
-  update.each { k, v ->
+  config.update.each { k, v ->
       def binding = new Binding(yaml:yaml)
       def shell = new GroovyShell(binding)
       def expression = "yaml${k} = '${v}'"
