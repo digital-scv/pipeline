@@ -44,7 +44,52 @@ public class ContainerBuilder implements Serializable {
 
 		def _new = config.clone()
 		_new.containers = _new.containers.collect { script.containerTemplate(it) }
-		_new.volumes = _new.volumes.collect {it.collect {script."${it.key}"(it.value)} }
+		_new.volumes = _new.volumes.collect {
+			def type = it.keySet().find({ it.contains(':') || it == 'empty' })
+			def args = it
+
+			if(!type)
+			  throw new IllegalArgumentException("Volume should be written such as 'pvc/clame-name'. Can not create a volume with $it. ")
+
+			//Convert shot-cut to real volume obj.
+			args.mountPath = it.remove(type)
+			def token = type.split(':')
+			logger.debug("token = ${token}")
+			switch(token[0]){
+				case 'empty':
+				  //args['mountPath'] = token[1]
+				  type = 'emptyDirVolume'
+				  break
+				case 'pvc':
+				  type = 'persistentVolumeClaim'
+				  args['claimName'] = token[1]
+				  break
+				case 'host':
+				  type = 'hostPathVolume'
+				  args['hostPath'] = token[1]
+				  break
+				case 'configmap':
+				  type = 'configMapVolume'
+				  args['configMapName'] = token[1]
+				  break
+				case 'secret':
+				  type = 'secretVolume'
+				  args['secretName'] = token[1]
+				  break
+				case 'nfs':
+				  //http://mrhaki.blogspot.com/2015/01/groovy-goodness-getting-all-but-last.html
+				  //https://stackoverflow.com/a/4513293
+				  //https://stackoverflow.com/a/15962949
+				  token = Arrays.copyOf(token[1].split('/'), 2)
+				  type = 'nfsVolume'
+				  args['serverAddress'] = token[0]
+				  args['serverPath'] = token[1] ?: '/'
+				  break
+			}
+
+			logger.debug("${type}( ${args} )")
+			script."${type}"(args)
+		}
 		_new.volumes = _new.volumes.flatten()  //Flatten Complex List (https://stackoverflow.com/a/11558564)
 
 		logger.debug("_new.containers   = ${_new.containers}")
@@ -146,7 +191,7 @@ public class ContainerBuilder implements Serializable {
 	public ContainerBuilder volume(List<Map> args){ volume(args as Map[]) }
 	public ContainerBuilder volume(Map... args){
 		logger.debug("config = ${config}")
-		merge(config.volumes, args, { compVolumeName(it, ext) })
+		merge(config.volumes, args, { compVolumeName2(it, ext) })
 
 		return this;
 	}
@@ -158,6 +203,18 @@ public class ContainerBuilder implements Serializable {
 	public def compVolumeName(Map v1, Map v2){
 		//- http://mrhaki.blogspot.com/2011/04/groovy-goodness-see-if-sets-are-equal.html
 		return v1.keySet() == v2.keySet() && volumeName(v1) == volumeName(v2)
+	}
+
+	public def compVolumeName2(Map v1, Map v2){
+		def keys = v1.keySet() + v2.keySet()
+		def id = keys.findAll( {it.contains(':')} )
+		logger.debug("""
+		- v1: $v1
+		- v2: $v2
+		- cond : $id, ${v1.keySet().containsAll(id)}
+		""")
+		// https://stackoverflow.com/a/23789718
+		return id.size() == 1 && v1.keySet().containsAll(id)
 	}
 
 	/**
