@@ -21,8 +21,8 @@ def apply(ret) {
     logger.debug("FILE : ${config.file}")
     command.append(" -f ${config.file}")
   } else if (config.folder) {
-    logger.debug("FOLDER : ${config.file}")
-    command.append(" -f ${config.file}")
+    logger.debug("FOLDER : ${config.folder}")
+    command.append(" -f ${config.folder}")
   } else {
     throw createException('RC301')   
   }
@@ -605,8 +605,23 @@ private def executeApplyFile(command, config, logger) {
     // rollout
     if (config.wait > 0) {
       def config2 = config.clone()
-      config2.put('throwException', true)
-      rolloutStatus config2
+      def resourceKind
+      def resourceName
+      try {
+        config2.put('jsonpath', '{.kind}/{.metadata.name}')
+        def resource = getValue config2
+        
+        resourceKind = resource.tokenize('/')[0]
+        resourceName = resource.tokenize('/')[1]
+      } catch (Exception e2) {
+      }
+      
+      def rolloutPossibleResources = ['deployment', 'deploy', 'daemonset', 'ds', 'statefullset', 'sts']
+      if (rolloutPossibleResources.contains(resourceKind.toLowerCase())) {
+        def config3 = config.clone()
+        config3.put('throwException', true)
+        rolloutStatus config3
+      }
     }
 
     
