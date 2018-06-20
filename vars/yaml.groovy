@@ -43,7 +43,7 @@ def update(def ret) {
   
   logger.debug("UPDATE : ${config.update}")
 
-  def yamlText = readFile file:'k8s/deploy.yaml'
+  def yamlText = readFile file: config.file
   logger.debug("""Original yaml contents
 ${yamlText}
 """)
