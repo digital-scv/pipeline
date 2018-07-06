@@ -42,7 +42,7 @@ def call(ret) {
  * pom
  * version
  */
-def version(ret) {
+def updateVersion(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret, [pom: 'pom.xml'])
   
