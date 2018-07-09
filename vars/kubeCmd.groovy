@@ -666,12 +666,20 @@ private def recoverApply(exists, config, logger) {
     def rolloutPossibleResources = ['deployment', 'deploy', 'daemonset', 'ds', 'statefullset', 'sts']
     if (rolloutPossibleResources.contains(config.type.toLowerCase())) {
       rolloutUndo config
+      return
     } else if (config.recoverFile) {
-      def recoverConfig = config.clone()
-      recoverConfig.file = config.recoverFile
-      recoverConfig.recoverOnFail = false
-      recoverConfig.wait = 0
-      apply recoverConfig
+      if (config.recoverFile) {
+        logger.debug('Trying to recover with ${config.recoverFile}.')
+        def recoverConfig = config.clone()
+        recoverConfig.file = config.recoverFile
+        recoverConfig.recoverOnFail = false
+        recoverConfig.wait = 0
+        apply recoverConfig
+        return
+      } else {
+        logger.error('Can not recover ${config.type}/${config.name}. Because recoverFile is not set.')
+        return
+      }
     }
 
   } else {
