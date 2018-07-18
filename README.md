@@ -49,8 +49,8 @@ agent:
 ```groovy
 // Just add a below simple Jenkinsfile.
 // This code will execute a pipeline that is prepared as pipeline shared library.
-@Library('sail-lib') _
-sail()
+@Library('retort') _
+heat()
 ```
 
 ### Execute Pipeline Job 
