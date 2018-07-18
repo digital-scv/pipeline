@@ -2,6 +2,6 @@ static {
   println "${System.class.classLoader.rootLoader}"
 }
 
-static def call(){
+static def xxx(){
   println "loadFile!!"
 }
