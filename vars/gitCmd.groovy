@@ -36,10 +36,10 @@ def commit(ret) {
     def repo = Eval.me(env.SCM_INFO)
     config.authorName = repo.GIT_AUTHOR_NAME
     config.authorEmail = repo.GIT_AUTHOR_EMAIL
-    config.message = """\"Commit from Jenkins system.
+    config.message = """Commit from Jenkins system.
 JOB : ${env.JOB_NAME}
 BUILD_NUMBER : ${env.BUILD_NUMBER}
-BUIlD_URL : ${env.BUILD_URL}\"
+BUIlD_URL : ${env.BUILD_URL}
 """ 
   }
   
@@ -119,22 +119,42 @@ def push(ret) {
       command.append("${gitUri.getScheme()}")
       command.append("://")
       // username
-      command.append("${GIT_USER?:''}")
+      def gitUser = GIT_USER
+      if (gitUser) {
+        gitUser = URLEncoder.encode(GIT_USER, "UTF-8")
+        command.append(gitUser)
+        /*
+        wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: gitUser, var: 'USER']]]) {
+          command.append("${USER}")
+        }
+        */
+      }
+
       // password
-      command.append("${GIT_PASSWORD?':'+GIT_PASSWORD+'@':GIT_USER?'@':''}")
+      def gitPass = GIT_PASSWORD
+      if (gitPass) {
+      	gitPass = URLEncoder.encode(GIT_PASSWORD, "UTF-8")
+      	command.append("${':'+gitPass+'@'}")
+      	/*
+        wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: gitPass, var: 'PASS']]]) {
+          command.append("${':'+PASS+'@'}")
+        }
+        */
+      } else {
+      	command.append("${gitUser?'@':''}")
+      }
+
       // host
       command.append("${gitUri.getHost()}")
       // port
-      command.append("${gitUri.getPort()?':'+gitUri.getPort():''}")
+      command.append("${(gitUri.getPort()!=-1)?':'+gitUri.getPort():''}")
       // path
       command.append("${gitUri.getPath()}")
-      sh command.toString()
     }
   } else {
     command.append("${config.gitUrl}")
-    sh command.toString()
   }
-
+  sh command.toString()
 
 }
 
@@ -146,10 +166,10 @@ def push(ret) {
 def tag(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret, [ 
-    message : """\"Release from Jenkins system.
+    message : """Release from Jenkins system.
 JOB : ${env.JOB_NAME}
 BUILD_NUMBER : ${env.BUILD_NUMBER}
-BUIlD_URL : ${env.BUILD_URL}\"
+BUIlD_URL : ${env.BUILD_URL}
 """ ,
     tag: env.VERSION
   ])
