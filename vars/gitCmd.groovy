@@ -36,10 +36,10 @@ def commit(ret) {
     def repo = Eval.me(env.SCM_INFO)
     config.authorName = repo.GIT_AUTHOR_NAME
     config.authorEmail = repo.GIT_AUTHOR_EMAIL
-    config.message = """Commit from Jenkins system.
+    config.message = """\"Commit from Jenkins system.
 JOB : ${env.JOB_NAME}
 BUILD_NUMBER : ${env.BUILD_NUMBER}
-BUIlD_URL : ${env.BUILD_URL}
+BUIlD_URL : ${env.BUILD_URL}\"
 """ 
   }
   
@@ -113,51 +113,39 @@ def push(ret) {
   
   if (config.credentialsId) {
     URI gitUri = new URI(config.gitUrl)
-    def gitUser
+    
     withCredentials([usernamePassword(credentialsId: config.credentialsId, passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USER')]) {
       // protocol
       command.append("${gitUri.getScheme()}")
       command.append("://")
       // username
-      gitUser = GIT_USER
-      /*
+      def gitUser = GIT_USER
       if (gitUser) {
         gitUser = URLEncoder.encode(GIT_USER, "UTF-8")
-        //command.append(gitUser)
-        wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: gitUser, var: 'USER']]]) {
-          command.append("${USER}")
-        }
+        command.append(gitUser)
       }
-      */
       // password
       def gitPass = GIT_PASSWORD
-      /*
       if (gitPass) {
       	gitPass = URLEncoder.encode(GIT_PASSWORD, "UTF-8")
-      	//command.append("${':'+gitPass+'@'}")
-        wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: gitPass, var: 'PASS']]]) {
-          command.append("${':'+PASS+'@'}")
-        }
+      	command.append("${':'+gitPass+'@'}")
       } else {
       	command.append("${gitUser?'@':''}")
       }
-*/
+
       // host
       command.append("${gitUri.getHost()}")
       // port
       command.append("${(gitUri.getPort()!=-1)?':'+gitUri.getPort():''}")
       // path
       command.append("${gitUri.getPath()}")
-    }
-    wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: gitUser, var: 'USER']]]) {
-      command.append("${USER}")
-      echo "${USER}"
+      sh command.toString()
     }
   } else {
     command.append("${config.gitUrl}")
+    sh command.toString()
   }
-  sh command.toString()
-
+  
 }
 
 /**
@@ -183,7 +171,7 @@ BUIlD_URL : ${env.BUILD_URL}
   
   def command = new StringBuffer('git tag ')
 
-  command.append("-a ${config.tag} -m ${config.message}")
+  command.append("-a ${config.tag} -m '${config.message}"')
   sh command.toString()
   
   def config2 = config.clone()
