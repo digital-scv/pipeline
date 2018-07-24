@@ -118,24 +118,37 @@ def push(ret) {
       // protocol
       command.append("${gitUri.getScheme()}")
       command.append("://")
+      
       // username
-      command.append("${GIT_USER?:''}")
+      def gitUser = GIT_USER
+      if (gitUser) {
+      	gitUser = URLEncoder.encode(GIT_USER, "UTF-8")
+      }
+      
       // password
-      command.append("${GIT_PASSWORD?':'+GIT_PASSWORD+'@':GIT_USER?'@':''}")
-      // host
-      command.append("${gitUri.getHost()}")
-      // port
-      command.append("${gitUri.getPort()?':'+gitUri.getPort():''}")
-      // path
-      command.append("${gitUri.getPath()}")
-      sh command.toString()
+      def gitPass = GIT_PASSWORD
+      if (gitPass) {
+        gitPass = URLEncoder.encode(GIT_PASSWORD, "UTF-8")
+      }
+      
+      wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: gitUser, var: 'USER'], [password: gitPass, var: 'PASSWORD']]]) {
+        command.append("${gitUser?:''}")
+        command.append("${gitPass?':'+gitPass+'@':gitUser?'@':''}")
+        // host
+        command.append("${gitUri.getHost()}")
+        // port
+        command.append("${(gitUri.getPort()!=-1)?':'+gitUri.getPort():''}")
+        // path
+        command.append("${gitUri.getPath()}")
+        
+        sh command.toString()
+      }
     }
   } else {
     command.append("${config.gitUrl}")
     sh command.toString()
   }
-
-
+  
 }
 
 /**
@@ -161,7 +174,7 @@ BUIlD_URL : ${env.BUILD_URL}\"
   
   def command = new StringBuffer('git tag ')
 
-  command.append("-a ${config.tag} -m ${config.message}")
+  command.append("-a ${config.tag} -m '${config.message}"')
   sh command.toString()
   
   def config2 = config.clone()
