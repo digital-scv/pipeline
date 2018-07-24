@@ -118,28 +118,31 @@ def push(ret) {
       // protocol
       command.append("${gitUri.getScheme()}")
       command.append("://")
+      
       // username
       def gitUser = GIT_USER
       if (gitUser) {
-        gitUser = URLEncoder.encode(GIT_USER, "UTF-8")
-        command.append(gitUser)
+      	gitUser = URLEncoder.encode(GIT_USER, "UTF-8")
       }
+      
       // password
       def gitPass = GIT_PASSWORD
       if (gitPass) {
-      	gitPass = URLEncoder.encode(GIT_PASSWORD, "UTF-8")
-      	command.append("${':'+gitPass+'@'}")
-      } else {
-      	command.append("${gitUser?'@':''}")
+        gitPass = URLEncoder.encode(GIT_PASSWORD, "UTF-8")
       }
-
-      // host
-      command.append("${gitUri.getHost()}")
-      // port
-      command.append("${(gitUri.getPort()!=-1)?':'+gitUri.getPort():''}")
-      // path
-      command.append("${gitUri.getPath()}")
-      sh command.toString()
+      
+      wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: gitUser, var: 'USER'], [password: gitPass, var: 'PASSWORD']]]) {
+        command.append("${gitUser?:''}")
+        command.append("${gitPass?':'+gitPass+'@':gitUser?'@':''}")
+        // host
+        command.append("${gitUri.getHost()}")
+        // port
+        command.append("${(gitUri.getPort()!=-1)?':'+gitUri.getPort():''}")
+        // path
+        command.append("${gitUri.getPath()}")
+        
+        sh command.toString()
+      }
     }
   } else {
     command.append("${config.gitUrl}")
