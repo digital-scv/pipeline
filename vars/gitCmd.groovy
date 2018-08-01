@@ -7,8 +7,9 @@ import static retort.utils.Utils.delegateParameters as getParam
  * @param url
  * @param branch
  * @param credentialsId
- * @param poll
- * @param changelog
+ * @param poll : false
+ * @param changelog : true
+ * @param webviewUrl : env.GIT_WEB_VIEW_URL
  */
 def checkout(ret) {
   Logger logger = Logger.getLogger(this)
@@ -20,8 +21,8 @@ def checkout(ret) {
   def repo = this.steps.checkout changelog: changelog, poll: poll,
                scm: [
                  $class: 'GitSCM',
-                 branches: [[name: "${config.branch?config.branch:'*/master'}"]],
-                 browser: [$class: 'BitbucketWeb', repoUrl: env.GIT_WEB_VIEW_URL],
+                 branches: [[name: "${config.branch?:'*/master'}"]],
+                 browser: [$class: 'BitbucketWeb', repoUrl: "${config.webviewUrl?:env.GIT_WEB_VIEW_URL}"],
                  doGenerateSubmoduleConfigurations: false,
                  extensions: [],
                  submoduleCfg: [],
