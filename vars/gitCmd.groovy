@@ -7,20 +7,32 @@ import static retort.utils.Utils.delegateParameters as getParam
  * @param url
  * @param branch
  * @param credentialsId
- * @param poll
- * @param changelog
+ * @param poll : false
+ * @param changelog : true
+ * @param webviewUrl : env.GIT_WEB_VIEW_URL
  */
 def checkout(ret) {
   Logger logger = Logger.getLogger(this)
   def config = getParam(ret)
   
-  def repo = git(config)
+  boolean changelog = (config.changelog?:true).toBoolean()
+  boolean poll = (config.poll?:false).toBoolean()
+  
+  def repo = this.steps.checkout changelog: changelog, poll: poll,
+               scm: [
+                 $class: 'GitSCM',
+                 branches: [[name: "${config.branch?:'*/master'}"]],
+                 browser: [$class: 'BitbucketWeb', repoUrl: "${config.webviewUrl?:env.GIT_WEB_VIEW_URL}"],
+                 doGenerateSubmoduleConfigurations: false,
+                 extensions: [],
+                 submoduleCfg: [],
+                 userRemoteConfigs: [[credentialsId: "${config.credentialsId}", url: "${config.url}"]]
+               ]
   
   env.SCM_INFO = repo.inspect()
   
   return repo
 }
-
 
 /**
  * @param file string or list
@@ -93,6 +105,7 @@ def push(ret) {
   if (env.SCM_INFO) {
     def repo = Eval.me(env.SCM_INFO)
     config.put('gitUrl', repo.GIT_URL)
+    config.put('gitBranch', "${(repo.GIT_BRANCH).startsWith('origin/')?(repo.GIT_BRANCH).substring(7):repo.GIT_BRANCH}")
   } else if (env.GIT_URL) {
     config.put('gitUrl', env.GIT_URL)
   }
@@ -131,7 +144,7 @@ def push(ret) {
         gitPass = URLEncoder.encode(GIT_PASSWORD, "UTF-8")
       }
       
-      wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: gitUser, var: 'USER'], [password: gitPass, var: 'PASSWORD']]]) {
+      wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: gitPass, var: 'PASSWORD'], [password: gitUser, var: 'USER']]]) {
         command.append("${gitUser?:''}")
         command.append("${gitPass?':'+gitPass+'@':gitUser?'@':''}")
         // host
@@ -140,12 +153,15 @@ def push(ret) {
         command.append("${(gitUri.getPort()!=-1)?':'+gitUri.getPort():''}")
         // path
         command.append("${gitUri.getPath()}")
-        
+        command.append(' HEAD:')
+        command.append("${config.gitBranch?:'master'}")
         sh command.toString()
       }
     }
   } else {
     command.append("${config.gitUrl}")
+    command.append(' HEAD:')
+    command.append("${config.gitBranch?:'master'}")
     sh command.toString()
   }
   
