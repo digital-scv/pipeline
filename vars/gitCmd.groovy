@@ -190,7 +190,7 @@ BUIlD_URL : ${env.BUILD_URL}\"
   
   def command = new StringBuffer('git tag ')
 
-  command.append("-a ${config.tag} -m '${config.message}"')
+  command.append("-a ${config.tag} -m '${config.message}'")
   sh command.toString()
   
   def config2 = config.clone()
