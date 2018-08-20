@@ -170,6 +170,8 @@ def push(ret) {
 /**
  * @param tag env.VERSION
  * @param message
+ * @param authorName
+ * @param authorEmail
  * @param credentialsId
  */
 def tag(ret) {
@@ -188,9 +190,21 @@ BUIlD_URL : ${env.BUILD_URL}\"
     createException('RC503')
   }
   
-  def command = new StringBuffer('git tag ')
+  def command = new StringBuffer()
 
-  command.append("-a ${config.tag} -m '${config.message}'")
+  if (config.authorName) {
+    command.append("git config --global user.name \"${config.authorName}\"\n")
+  } else {
+    command.append("git config --global user.name \"JENKINS-SYSTEM\"\n")
+  }
+
+  if (config.authorEmail) {
+    command.append("git config --global user.email \"${config.authorEmail}\"\n")
+  } else {
+    command.append("git config --global user.email \"jenkins.system@jenkins.com\"\n")
+  }
+  
+  command.append("git tag -a ${config.tag} -m '${config.message}'")
   sh command.toString()
   
   def config2 = config.clone()

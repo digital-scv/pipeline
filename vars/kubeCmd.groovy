@@ -611,14 +611,17 @@ private def executeApplyFile(command, config, logger) {
       def config2 = config.clone()
       def resourceKind
       def resourceName
+      def resourceNamespace
       try {
-        config2.put('jsonpath', '{.kind}/{.metadata.name}')
+        config2.put('jsonpath', '{.kind}/{.metadata.name}/{.metadata.namespace}')
         def resource = getValue config2
-        
-        resourceKind = resource.tokenize('/')[0]
+        def resourceToken = resource.tokenize('/')
+        resourceKind = resourceToken[0]
         recoverConfig.type = resourceKind
-        resourceName = resource.tokenize('/')[1]
+        resourceName = resourceToken[1]
         recoverConfig.name = resourceName
+        resourceNamespace = resourceToken[2]
+        recoverConfig.namespace = resourceNamespace
       } catch (Exception e2) {
       }
       
