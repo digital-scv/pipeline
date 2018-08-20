@@ -96,7 +96,7 @@ BUIlD_URL : ${env.BUILD_URL}\"
 
 /**
  * @param gitUrl
- * @param credentialsId required.
+ * @param credentialsId
  * @param tags : false
  */
 def push(ret) {
@@ -170,7 +170,7 @@ def push(ret) {
 /**
  * @param tag env.VERSION
  * @param message
- * @param credentialsId required.
+ * @param credentialsId
  */
 def tag(ret) {
   Logger logger = Logger.getLogger(this)
