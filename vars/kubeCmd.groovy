@@ -108,7 +108,7 @@ def describe(ret) {
     try {
       sh command.toString()
     } catch (Exception e) {
-      logger.error('Exception occured while running describe command : ${command.toString()}')
+      logger.error("Exception occured while running describe command : ${command.toString()}")
       throw createException('RC306', e, 'describe', command.toString())
     }
   } catch (Exception e) {
@@ -301,12 +301,14 @@ def rolloutStatus(ret) {
     def config2 = config.clone()
     def resourceKind
     def resourceName
+    def resourceNamespace
     try {
-      config2.put('jsonpath', '{.kind}/{.metadata.name}')
+      config2.put('jsonpath', '{.kind}/{.metadata.name}/{.metadata.namespace}')
       def resource = getValue config2
-      
-      resourceKind = resource.tokenize('/')[0]
-      resourceName = resource.tokenize('/')[1]
+      def resourceToken = resource.tokenize('/')
+      resourceKind = resourceToken[0]
+      resourceName = resourceToken[1]
+      resourceNamespace = resourceToken[2]
     } catch (Exception e2) {
       logger.error("Resource does not exists. Can not execute rollout status.")
       throw createException('RC316', "rollout status")
@@ -352,6 +354,7 @@ def rolloutStatus(ret) {
       config2 = config.clone()
       config2.put('type', 'pod')
       config2.put('name', resourceName)
+      config2.put('namespace', resourceNamespace)
       config2.put('throwException', false)
       
       describe config2
