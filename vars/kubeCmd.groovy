@@ -293,11 +293,6 @@ def rolloutStatus(ret) {
       throw createException('RC303')
     }
     
-    if (config.namespace) {
-      logger.debug("NAMESPACE : ${config.namespace}")
-      command.append(" -n ${config.namespace}")
-    }
-    
     def config2 = config.clone()
     def resourceKind
     def resourceName
@@ -312,6 +307,14 @@ def rolloutStatus(ret) {
     } catch (Exception e2) {
       logger.error("Resource does not exists. Can not execute rollout status.")
       throw createException('RC316', "rollout status")
+    }
+    
+    if (config.namespace) {
+      logger.debug("NAMESPACE : ${config.namespace}")
+      command.append(" -n ${config.namespace}")
+    } else {
+      logger.debug("NAMESPACE : ${resourceNamespace}")
+      command.append(" -n ${resourceNamespace}")
     }
     
     def rolloutPossibleResources = ['deployment', 'deploy', 'daemonset', 'ds', 'statefullset', 'sts']
